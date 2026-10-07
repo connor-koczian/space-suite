@@ -466,11 +466,37 @@
 
       L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-      // Dark Matter Map Tiles (Clean, aerospace dark theme)
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        maxZoom: 19,
-        subdomains: 'abcd',
-      }).addTo(map);
+      // High-resolution Earth Satellite imagery (No API key required)
+      const satelliteLayer = L.tileLayer(
+        'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+        { maxZoom: 18, attribution: 'Esri Satellite' }
+      );
+
+      // Boundaries & place labels overlay
+      const labelsLayer = L.tileLayer(
+        'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
+        { maxZoom: 18, attribution: 'Esri Reference' }
+      );
+
+      // OpenStreetMap street layer (No API key required)
+      const osmLayer = L.tileLayer(
+        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+        { maxZoom: 19, attribution: '© OpenStreetMap' }
+      );
+
+      // Default: Satellite + country borders
+      satelliteLayer.addTo(map);
+      labelsLayer.addTo(map);
+
+      // Layer switcher control (top-right)
+      const baseMaps = {
+        "🛰️ Satellite View": satelliteLayer,
+        "🗺️ Street Map": osmLayer
+      };
+      const overlayMaps = {
+        "Borders & Labels": labelsLayer
+      };
+      L.control.layers(baseMaps, overlayMaps, { position: 'topright' }).addTo(map);
 
       // Force recalculation of map viewport dimensions
       setTimeout(() => { map.invalidateSize(); }, 150);
