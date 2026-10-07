@@ -44,7 +44,18 @@ def main(argv: list[str] | None = None) -> int:
     subcommand = args[0]
     subargs = args[1:]
 
-    if subcommand == "iss":
+    if subcommand in ("--web", "-w", "web", "hub"):
+        from space_suite.web_gateway import launch_unified_gateway
+
+        port = 8055
+        if "--port" in subargs:
+            try:
+                port = int(subargs[subargs.index("--port") + 1])
+            except (ValueError, IndexError):
+                pass
+        launch_unified_gateway(port=port)
+        return 0
+    elif subcommand == "iss":
         return tracker.main(subargs)
     elif subcommand == "launch":
         from space_suite.launch import tracker as launch_tracker
@@ -56,7 +67,7 @@ def main(argv: list[str] | None = None) -> int:
         return lander_sim.main(subargs)
     else:
         console.print(
-            f"[bold red]Unknown module:[/] '{subcommand}'. Choose 'iss', 'launch', or 'lander'."
+            f"[bold red]Unknown command:[/] '{subcommand}'. Run 'space-suite --web' or choose 'iss', 'launch', 'lander'."
         )
         return 1
 

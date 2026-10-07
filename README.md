@@ -184,14 +184,28 @@ uv run lander --manual
 
 ---
 
+## Unified SpaceSuite Mission Control Gateway
+
+Launch **all three modules simultaneously** under a single unified web server:
+```bash
+uv run space-suite --web
+```
+Open **`http://127.0.0.1:8055`** to switch instantly between all modules on the same server with zero broken links:
+- `http://127.0.0.1:8055/` — Mission Control Hub & System Overview
+- `http://127.0.0.1:8055/iss` — Live ISS 3D Orbit Tracker & Overhead Alert
+- `http://127.0.0.1:8055/launch` — SpaceX & Rocket Launch Mission Control
+- `http://127.0.0.1:8055/lander` — Starship / Lunar Lander Suicide Burn Simulator
+
+---
+
 ## Top-Level Suite Launcher
 
-Launch any module directly from the unified CLI:
+Launch any individual module directly from the unified CLI:
 ```bash
+uv run space-suite --web
 uv run space-suite iss
 uv run space-suite launch
 uv run space-suite lander
-uv run space-suite lander --web
 ```
 
 ---

@@ -29,3 +29,11 @@ def test_parse_args_custom_coords():
     assert args.lat == 40.7128
     assert args.lon == -74.0060
     assert args.name == "New York"
+
+
+def test_space_suite_main_menu():
+    from space_suite.cli import main
+
+    assert main([]) == 0
+    assert main(["--help"]) == 0
+    assert main(["unknown-command"]) == 1
