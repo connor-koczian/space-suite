@@ -78,6 +78,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default=8055,
         help="Local port for web dashboard (default: 8055)",
     )
+    parser.add_argument(
+        "--simulate-pass",
+        action="store_true",
+        help="Run a 15-second simulated overhead pass for demonstration and testing",
+    )
     return parser.parse_args(argv)
 
 
