@@ -41,8 +41,9 @@ def main(argv: list[str] | None = None) -> int:
     if subcommand == "iss":
         return tracker.main(subargs)
     elif subcommand == "launch":
-        console.print("[yellow]Module 2 (SpaceX & Launch Mission Control) scheduled next on roadmap.[/]")
-        return 0
+        from space_suite.launch import tracker as launch_tracker
+
+        return launch_tracker.main(subargs)
     elif subcommand == "lander":
         console.print("[yellow]Module 3 (Starship Suicide Burn Simulator) scheduled on roadmap.[/]")
         return 0

@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SpaceX & Rocket Mission Control — SpaceSuite</title>
+  <link rel="stylesheet" href="/leaflet.css" />
+  <script src="/leaflet.js"></script>
+  <style>
+    :root {
+      --bg-dark: #080b11;
+      --card-bg: rgba(15, 23, 42, 0.85);
+      --border-color: rgba(239, 68, 68, 0.3);
+      --accent-red: #ef4444;
+      --accent-cyan: #38bdf8;
+      --accent-green: #4ade80;
+      --accent-yellow: #facc15;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", monospace, sans-serif;
+    }
+
+    body {
+      background: var(--bg-dark);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    header {
+      background: rgba(10, 15, 26, 0.95);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border-color);
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      font-size: 1.8rem;
+    }
+
+    .brand-title {
+      font-size: 1.2rem;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      color: var(--accent-red);
+    }
+
+    .brand-sub {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      letter-spacing: 0.5px;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .filter-btn {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-muted);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 6px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+
+    .filter-btn.active {
+      background: rgba(239, 68, 68, 0.2);
+      color: #fff;
+      border-color: var(--accent-red);
+      box-shadow: 0 0 12px rgba(239, 68, 68, 0.4);
+    }
+
+    .btn {
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--accent-cyan);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      padding: 6px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+
+    .btn:hover {
+      background: rgba(56, 189, 248, 0.3);
+      color: #fff;
+    }
+
+    /* Main Container */
+    .container {
+      max-width: 1300px;
+      margin: 0 auto;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      flex: 1;
+      width: 100%;
+    }
+
+    /* Giant Countdown Section */
+    .hero-countdown {
+      background: linear-gradient(180deg, rgba(239, 68, 68, 0.12) 0%, rgba(15, 23, 42, 0.6) 100%);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 32px 24px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-tagline {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      color: var(--accent-red);
+      font-weight: 700;
+    }
+
+    .hero-mission-title {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: 1px;
+    }
+
+    /* Digital Countdown Clock */
+    .clock-display {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      align-items: center;
+      margin: 12px 0;
+      font-family: monospace;
+    }
+
+    .clock-block {
+      background: rgba(0, 0, 0, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 12px 18px;
+      min-width: 90px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.8);
+    }
+
+    .clock-val {
+      font-size: 2.8rem;
+      font-weight: 900;
+      color: var(--accent-red);
+      text-shadow: 0 0 20px rgba(239, 68, 68, 0.7);
+    }
+
+    .clock-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .clock-sep {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-top: -12px;
+    }
+
+    /* Grid layout for Details & Pad Map */
+    .grid-two {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .card-title {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--accent-red);
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      padding-bottom: 8px;
+    }
+
+    .meta-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+
+    .meta-table td {
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .meta-table td:first-child {
+      color: var(--text-muted);
+      width: 35%;
+    }
+
+    .meta-table td:last-child {
+      color: #fff;
+      font-weight: 600;
+    }
+
+    #pad-map {
+      width: 100%;
+      height: 280px;
+      border-radius: 8px;
+      background: #0a0e17;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    /* Manifest Table */
+    .manifest-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      margin-top: 8px;
+    }
+
+    .manifest-table th {
+      text-align: left;
+      padding: 10px;
+      color: var(--text-muted);
+      font-weight: 600;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .manifest-table td {
+      padding: 12px 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      font-family: monospace;
+    }
+
+    .badge-green {
+      background: rgba(74, 222, 128, 0.15);
+      border: 1px solid rgba(74, 222, 128, 0.4);
+      color: var(--accent-green);
+    }
+
+    .badge-yellow {
+      background: rgba(250, 204, 21, 0.15);
+      border: 1px solid rgba(250, 204, 21, 0.4);
+      color: var(--accent-yellow);
+    }
+
+    .badge-red {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: var(--accent-red);
+    }
+
+    .stream-link {
+      color: var(--accent-cyan);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .stream-link:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <div class="brand-icon">🚀</div>
+      <div>
+        <div class="brand-title">SPACEX & ROCKET MISSION CONTROL</div>
+        <div class="brand-sub">ORBITAL LAUNCH TELEMETRY & COUNTDOWN</div>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <button class="filter-btn active" data-filter="SpaceX">🔴 SpaceX</button>
+      <button class="filter-btn" data-filter="Starship">⭐ Starship</button>
+      <button class="filter-btn" data-filter="NASA">🚀 NASA</button>
+      <button class="filter-btn" data-filter="">🌍 All Global</button>
+      <a href="http://127.0.0.1:8055" target="_blank" class="btn" title="Open ISS Tracker">🛰️ ISS Tracker</a>
+    </div>
+  </header>
+
+  <div class="container">
+    
+    <!-- Hero Countdown Banner -->
+    <div class="hero-countdown">
+      <div class="hero-tagline">NEXT UPCOMING MISSION LIFTOFF</div>
+      <div class="hero-mission-title" id="primary-title">Acquiring Launch Manifest...</div>
+      
+      <!-- Big Digital Countdown -->
+      <div class="clock-display">
+        <div class="clock-block">
+          <div class="clock-val" id="cd-days">--</div>
+          <div class="clock-label">Days</div>
+        </div>
+        <div class="clock-sep">:</div>
+        <div class="clock-block">
+          <div class="clock-val" id="cd-hours">--</div>
+          <div class="clock-label">Hours</div>
+        </div>
+        <div class="clock-sep">:</div>
+        <div class="clock-block">
+          <div class="clock-val" id="cd-mins">--</div>
+          <div class="clock-label">Mins</div>
+        </div>
+        <div class="clock-sep">:</div>
+        <div class="clock-block">
+          <div class="clock-val" id="cd-secs">--</div>
+          <div class="clock-label">Secs</div>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:16px; align-items:center;">
+        <span class="badge badge-green" id="status-badge">GO FOR LAUNCH</span>
+        <span style="font-family:monospace; color:var(--text-muted);" id="net-time-display">--:--:-- UTC</span>
+        <a id="btn-livestream" href="#" target="_blank" class="btn" style="display:none;">📺 Watch Webcast</a>
+      </div>
+    </div>
+
+    <!-- Grid Two: Dossier and Pad Map -->
+    <div class="grid-two">
+      
+      <!-- Mission Dossier Card -->
+      <div class="card">
+        <div class="card-title">
+          <span>Mission Specifications</span>
+          <span class="badge badge-red" id="rocket-badge">Falcon 9</span>
+        </div>
+        <table class="meta-table">
+          <tr>
+            <td>Launch Provider</td>
+            <td id="val-provider">--</td>
+          </tr>
+          <tr>
+            <td>Rocket Vehicle</td>
+            <td id="val-rocket">--</td>
+          </tr>
+          <tr>
+            <td>Payload & Mission</td>
+            <td id="val-mission">--</td>
+          </tr>
+          <tr>
+            <td>Target Orbit</td>
+            <td id="val-orbit">--</td>
+          </tr>
+          <tr>
+            <td>Launch Complex</td>
+            <td id="val-pad">--</td>
+          </tr>
+          <tr>
+            <td>Livestream Source</td>
+            <td id="val-stream">--</td>
+          </tr>
+        </table>
+        <div style="font-size:0.8rem; color:var(--text-muted); line-height:1.4; margin-top:4px;" id="val-description">
+          Loading payload description...
+        </div>
+      </div>
+
+      <!-- Launch Pad Map Card -->
+      <div class="card">
+        <div class="card-title">
+          <span>Launchpad Satellite View</span>
+          <span style="font-size:0.75rem; color:var(--text-muted);" id="pad-coords">--</span>
+        </div>
+        <div id="pad-map"></div>
+      </div>
+
+    </div>
+
+    <!-- Upcoming Manifest Table Card -->
+    <div class="card">
+      <div class="card-title">
+        <span>Upcoming Orbital Launch Queue</span>
+        <span class="badge badge-yellow">LIVE DOWNLINK</span>
+      </div>
+      <table class="manifest-table">
+        <thead>
+          <tr>
+            <th>Date (UTC)</th>
+            <th>Rocket</th>
+            <th>Provider</th>
+            <th>Mission</th>
+            <th>Launch Complex</th>
+            <th style="text-align:right;">Countdown</th>
+          </tr>
+        </thead>
+        <tbody id="manifest-rows">
+          <tr>
+            <td colspan="6" style="text-align:center; color:var(--text-muted);">Polling upcoming launch manifest...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <script>
+    let activeFilter = 'SpaceX';
+    let padMap = null;
+    let padMarker = null;
+    let currentLaunches = [];
+
+    function initPadMap() {
+      padMap = L.map('pad-map', {
+        zoomControl: false,
+        attributionControl: false
+      }).setView([28.5619, -80.5774], 14);
+
+      L.control.zoom({ position: 'bottomright' }).addTo(padMap);
+
+      // High-resolution satellite tiles
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        maxZoom: 18,
+        attribution: 'Esri Satellite'
+      }).addTo(padMap);
+
+      setTimeout(() => { padMap.invalidateSize(); }, 200);
+    }
+
+    async function fetchLaunches() {
+      try {
+        const url = `/api/launches?search=${encodeURIComponent(activeFilter)}`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('Failed to load launches');
+        const data = await res.json();
+        currentLaunches = data.launches || [];
+        renderLaunches();
+      } catch (err) {
+        console.warn('Launch fetch notice:', err);
+      }
+    }
+
+    function renderLaunches() {
+      if (!currentLaunches.length) return;
+      const prime = currentLaunches[0];
+
+      // Update Hero
+      document.getElementById('primary-title').innerText = prime.name;
+      document.getElementById('status-badge').innerText = prime.status_name.toUpperCase();
+      document.getElementById('net-time-display').innerText = prime.net_time;
+      document.getElementById('rocket-badge').innerText = prime.rocket.name;
+
+      // Update Livestream button
+      const streamBtn = document.getElementById('btn-livestream');
+      if (prime.livestream_url) {
+        streamBtn.href = prime.livestream_url;
+        streamBtn.style.display = 'inline-block';
+      } else {
+        streamBtn.style.display = 'none';
+      }
+
+      // Update Dossier
+      document.getElementById('val-provider').innerText = `${prime.provider_name} (${prime.provider_type})`;
+      document.getElementById('val-rocket').innerText = prime.rocket.full_name || prime.rocket.name;
+      document.getElementById('val-mission').innerText = prime.mission ? prime.mission.name : prime.name;
+      document.getElementById('val-orbit').innerText = prime.mission ? (prime.mission.orbit_name || prime.mission.orbit_abbrev || 'LEO') : 'General Orbit';
+      document.getElementById('val-pad').innerText = `${prime.pad.name}, ${prime.pad.location_name}`;
+      document.getElementById('val-stream').innerHTML = prime.livestream_url ? `<a href="${prime.livestream_url}" target="_blank" class="stream-link">${prime.livestream_url}</a>` : 'Awaiting broadcast link';
+      document.getElementById('val-description').innerText = prime.mission ? prime.mission.description : 'Standard orbital deployment mission.';
+
+      // Update Pad Map
+      if (prime.pad.latitude && prime.pad.longitude && padMap) {
+        const padPos = [prime.pad.latitude, prime.pad.longitude];
+        document.getElementById('pad-coords').innerText = `${prime.pad.latitude.toFixed(4)}°, ${prime.pad.longitude.toFixed(4)}°`;
+        padMap.setView(padPos, 14);
+        if (!padMarker) {
+          padMarker = L.marker(padPos).addTo(padMap).bindPopup(`<b>${prime.pad.name}</b><br>${prime.pad.location_name}`);
+        } else {
+          padMarker.setLatLng(padPos);
+          padMarker.setPopupContent(`<b>${prime.pad.name}</b><br>${prime.pad.location_name}`);
+        }
+      }
+
+      // Update Manifest Table (Next launches in queue)
+      const tbody = document.getElementById('manifest-rows');
+      const queue = currentLaunches.slice(1, 6);
+      if (!queue.length) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">No additional missions currently scheduled in queue.</td></tr>';
+      } else {
+        tbody.innerHTML = queue.map(item => `
+          <tr>
+            <td>${item.net_time.slice(0, 16).replace('T', ' ')}</td>
+            <td><strong>${item.rocket.name}</strong></td>
+            <td>${item.provider_name}</td>
+            <td>${item.mission ? item.mission.name : item.name}</td>
+            <td style="color:var(--text-muted);">${item.pad.location_name}</td>
+            <td style="text-align:right; font-family:monospace; font-weight:700; color:var(--accent-yellow);">${formatCountdownFromIso(item.net_time)}</td>
+          </tr>
+        `).join('');
+      }
+    }
+
+    function tickCountdown() {
+      if (!currentLaunches.length) return;
+      const prime = currentLaunches[0];
+      const target = new Date(prime.net_time).getTime();
+      const now = new Date().getTime();
+      const diff = Math.max(0, Math.floor((target - now) / 1000));
+
+      const days = Math.floor(diff / 86400);
+      const hours = Math.floor((diff % 86400) / 3600);
+      const mins = Math.floor((diff % 3600) / 60);
+      const secs = diff % 60;
+
+      document.getElementById('cd-days').innerText = String(days).padStart(2, '0');
+      document.getElementById('cd-hours').innerText = String(hours).padStart(2, '0');
+      document.getElementById('cd-mins').innerText = String(mins).padStart(2, '0');
+      document.getElementById('cd-secs').innerText = String(secs).padStart(2, '0');
+    }
+
+    function formatCountdownFromIso(isoStr) {
+      const target = new Date(isoStr).getTime();
+      const now = new Date().getTime();
+      const diff = Math.floor((target - now) / 1000);
+      const sign = diff >= 0 ? '-' : '+';
+      const absDiff = Math.abs(diff);
+      const d = Math.floor(absDiff / 86400);
+      const h = Math.floor((absDiff % 86400) / 3600);
+      const m = Math.floor((absDiff % 3600) / 60);
+      return `T ${sign} ${d}d ${h}h ${m}m`;
+    }
+
+    // Filter Buttons
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        activeFilter = e.target.getAttribute('data-filter');
+        fetchLaunches();
+      });
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      initPadMap();
+      fetchLaunches();
+      setInterval(tickCountdown, 1000);
+      setInterval(fetchLaunches, 60000); // Poll fresh API data every 60s
+    });
+  </script>
+</body>
+</html>

@@ -15,6 +15,7 @@ dependencies = [
 [project.scripts]
 space-suite = "space_suite.cli:main"
 iss-tracker = "space_suite.iss.tracker:main"
+launch-control = "space_suite.launch.tracker:main"
 
 [build-system]
 requires = ["uv_build>=0.12.18,<0.13.0"]

@@ -5,8 +5,8 @@ A modular Python suite of spaceflight tools built from scratch for Ubuntu Linux.
 ## Modules
 
 - **Module 1**: Live ISS Telemetry & Overhead Pass Alert (`iss-tracker`)
-- **Module 2**: SpaceX & Rocket Launch Mission Control CLI (`space-suite launch`) *(Next)*
-- **Module 3**: Starship / Lunar Lander "Suicide Burn" 2D Physics Simulator (`space-suite lander`) *(Roadmap)*
+- **Module 2**: SpaceX & Rocket Launch Mission Control CLI (`launch-control`)
+- **Module 3**: Starship / Lunar Lander "Suicide Burn" 2D Physics Simulator (`space-suite lander`) *(Next)*
 
 ---
 
@@ -73,9 +73,59 @@ Simulates an overhead pass trajectory over 12 seconds so you can see the alert t
 uv run iss-tracker --simulate-pass
 ```
 
-#### 5. Top-Level Suite Launcher
+#### 5. Interactive Web Mission Control Dashboard
+```bash
+uv run iss-tracker --web
+```
+Access at `http://127.0.0.1:8055`.
+
+---
+
+## Module 2: SpaceX & Rocket Launch Mission Control
+
+Track upcoming orbital launches worldwide (SpaceX Falcon 9, Falcon Heavy, Starship, NASA SLS, Rocket Lab Electron, etc.) with real-time countdown clocks, launchpad satellite mapping, and mission manifests.
+
+### Key Features
+1. **Interactive Mission Control Web Dashboard (`--web`)**:
+   - Giant high-contrast T-minus / T-plus digital countdown timer.
+   - Comprehensive mission dossiers (provider, rocket family, mission objective, launchpad location, target orbit).
+   - Real-time filter toggles (`All Launches`, `SpaceX`, `Starship`, `NASA`).
+   - Integrated Esri photographic satellite Earth view pinpointed on the exact launch complex (Cape Canaveral SLC-40, Kennedy Space Center LC-39A, Starbase Boca Chica, Vandenberg, etc.).
+2. **Terminal Aerospace Live Dashboard**:
+   - Auto-ticking countdown with status codes (`GO for Launch`, `TBD`, `Success`, `Hold`).
+   - Manifest queue table displaying upcoming global flights.
+3. **Resilient Launch Downlink Engine**:
+   - Backed by Launch Library 2 API (`ll.thespacedevs.com`).
+   - In-memory 60s smart cache to respect rate limits while maintaining sub-second local countdown accuracy.
+
+### Usage Commands
+
+#### 1. Live Terminal Launch Control
+```bash
+uv run launch-control
+```
+
+#### 2. Filter for SpaceX or Starship
+```bash
+uv run launch-control --filter SpaceX
+uv run launch-control --filter Starship
+```
+
+#### 3. Interactive Web Mission Control Dashboard
+```bash
+uv run launch-control --web
+```
+Access at `http://127.0.0.1:8056`.
+
+---
+
+## Top-Level Suite Launcher
+
+Launch any module directly from the unified CLI:
 ```bash
 uv run space-suite iss
+uv run space-suite launch
+uv run space-suite launch --web
 ```
 
 ---
