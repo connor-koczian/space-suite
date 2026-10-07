@@ -68,9 +68,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Disable Ubuntu desktop notifications",
     )
     parser.add_argument(
-        "--simulate-pass",
+        "--web",
         action="store_true",
-        help="Run a 15-second simulated overhead pass for demonstration and testing",
+        help="Launch interactive visual web dashboard in browser with live world map & telemetry HUD",
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=8055,
+        help="Local port for web dashboard (default: 8055)",
     )
     return parser.parse_args(argv)
 
@@ -162,6 +168,19 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.simulate_pass:
         run_simulation(observer, notifier, args.threshold)
+        return 0
+
+    if args.web:
+        from space_suite.iss.web_server import launch_web_server
+
+        launch_web_server(
+            observer=observer,
+            notifier=notifier,
+            threshold_km=args.threshold,
+            port=args.port,
+            poll_interval=args.interval,
+            open_browser=True,
+        )
         return 0
 
     dashboard = ISSDashboard(observer=observer, threshold_km=args.threshold)

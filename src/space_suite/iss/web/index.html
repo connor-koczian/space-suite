@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ISS Mission Control — SpaceSuite</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    :root {
+      --bg-dark: #0a0d14;
+      --card-bg: rgba(16, 22, 36, 0.85);
+      --border-color: rgba(56, 189, 248, 0.25);
+      --accent-cyan: #38bdf8;
+      --accent-green: #4ade80;
+      --accent-yellow: #facc15;
+      --accent-red: #f87171;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", monospace, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Header Bar */
+    header {
+      background: rgba(10, 13, 20, 0.95);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border-color);
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 1000;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      font-size: 1.5rem;
+      animation: pulse 2s infinite ease-in-out;
+    }
+
+    .brand-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: var(--accent-cyan);
+    }
+
+    .brand-sub {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      letter-spacing: 0.5px;
+    }
+
+    .header-center {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      font-family: monospace;
+      font-size: 0.9rem;
+    }
+
+    .clock-badge {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid var(--border-color);
+      padding: 4px 10px;
+      border-radius: 4px;
+      color: var(--accent-cyan);
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    button.btn {
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--accent-cyan);
+      border: 1px solid var(--border-color);
+      padding: 6px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 600;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    button.btn:hover {
+      background: rgba(56, 189, 248, 0.3);
+      color: #fff;
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
+    }
+
+    /* Main Container */
+    .main-container {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 420px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Map View */
+    #map {
+      width: 100%;
+      height: 100%;
+      background: #060911;
+    }
+
+    /* HUD Sidebar */
+    .hud-sidebar {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      border-left: 1px solid var(--border-color);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      overflow-y: auto;
+      z-index: 500;
+    }
+
+    .card {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .card-title {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .stat-box {
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 6px;
+      padding: 8px 10px;
+    }
+
+    .stat-label {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-bottom: 2px;
+    }
+
+    .stat-val {
+      font-family: monospace;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .stat-unit {
+      font-size: 0.75rem;
+      color: var(--accent-cyan);
+      margin-left: 2px;
+    }
+
+    /* Pass Alert Banner */
+    .pass-banner {
+      border-radius: 8px;
+      padding: 12px;
+      font-weight: 700;
+      text-align: center;
+      font-size: 0.9rem;
+      letter-spacing: 0.5px;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .pass-banner.standby {
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--text-muted);
+    }
+
+    .pass-banner.overhead {
+      background: rgba(239, 68, 68, 0.2);
+      border: 1px solid var(--accent-red);
+      color: #fee2e2;
+      animation: alertPulse 1.5s infinite;
+      box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+    }
+
+    /* Badges */
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      font-family: monospace;
+    }
+
+    .badge-green {
+      background: rgba(74, 222, 128, 0.15);
+      border: 1px solid rgba(74, 222, 128, 0.4);
+      color: var(--accent-green);
+    }
+
+    .badge-yellow {
+      background: rgba(250, 204, 21, 0.15);
+      border: 1px solid rgba(250, 204, 21, 0.4);
+      color: var(--accent-yellow);
+    }
+
+    .badge-blue {
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      color: var(--accent-cyan);
+    }
+
+    /* Custom Leaflet Map Styling */
+    .leaflet-popup-content-wrapper {
+      background: rgba(15, 23, 42, 0.95);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(8px);
+    }
+
+    .leaflet-popup-tip {
+      background: rgba(15, 23, 42, 0.95);
+    }
+
+    .leaflet-container {
+      background: #080d19 !important;
+    }
+
+    /* Animations */
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.1); opacity: 0.8; }
+    }
+
+    @keyframes alertPulse {
+      0%, 100% { border-color: var(--accent-red); box-shadow: 0 0 15px rgba(239, 68, 68, 0.5); }
+      50% { border-color: #f87171; box-shadow: 0 0 25px rgba(239, 68, 68, 0.8); }
+    }
+
+    /* Footer info */
+    .hud-footer {
+      margin-top: auto;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      text-align: center;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      padding-top: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Mission Control Navigation -->
+  <header>
+    <div class="brand">
+      <div class="brand-icon">🛰️</div>
+      <div>
+        <div class="brand-title">SPACESUITE ISS MISSION CONTROL</div>
+        <div class="brand-sub">ORBITAL DOWNLINK • NORAD #25544</div>
+      </div>
+    </div>
+
+    <div class="header-center">
+      <div class="clock-badge">
+        <span id="utc-clock">--:--:-- UTC</span>
+      </div>
+      <div class="badge badge-green" id="downlink-badge">
+        ● LIVE TELEMETRY
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <button class="btn" id="btn-recenter" title="Center map on ISS">🎯 Follow ISS</button>
+      <button class="btn" id="btn-notify-test" title="Send Ubuntu desktop alert">🔔 Test Alert</button>
+      <button class="btn" id="btn-sim-toggle" title="Toggle 12s overhead pass demo">🚀 Simulate Pass</button>
+    </div>
+  </header>
+
+  <!-- Main View Grid -->
+  <div class="main-container">
+    
+    <!-- World Map Container -->
+    <div id="map"></div>
+
+    <!-- Live Telemetry HUD -->
+    <div class="hud-sidebar">
+
+      <!-- Pass Status Alert Box -->
+      <div class="pass-banner standby" id="pass-banner">
+        <span>○ STANDBY • ISS OUT OF RANGE</span>
+      </div>
+
+      <!-- Orbital Telemetry Card -->
+      <div class="card">
+        <div class="card-title">
+          <span>Orbital Telemetry</span>
+          <span class="badge badge-blue" id="vis-badge">DAYLIGHT</span>
+        </div>
+        <div class="stat-grid">
+          <div class="stat-box">
+            <div class="stat-label">Sub-Sat Latitude</div>
+            <div class="stat-val" id="val-lat">--.----°</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Sub-Sat Longitude</div>
+            <div class="stat-val" id="val-lon">--.----°</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Orbital Altitude</div>
+            <div class="stat-val"><span id="val-alt">---</span><span class="stat-unit">km</span></div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Orbital Velocity</div>
+            <div class="stat-val"><span id="val-vel">--,---</span><span class="stat-unit">km/h</span></div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Speed in km/s</div>
+            <div class="stat-val"><span id="val-vel-kms">-.--</span><span class="stat-unit">km/s</span></div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Equivalent Mach</div>
+            <div class="stat-val"><span id="val-mach">--.-</span><span class="stat-unit">Mach</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ground Station Relativity Card -->
+      <div class="card">
+        <div class="card-title">
+          <span>Ground Station Relativity</span>
+          <span class="badge badge-green" id="observer-name">Home Base</span>
+        </div>
+        <div class="stat-grid">
+          <div class="stat-box">
+            <div class="stat-label">Surface Distance</div>
+            <div class="stat-val"><span id="val-dist">-,---</span><span class="stat-unit">km</span></div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Slant Range (3D)</div>
+            <div class="stat-val"><span id="val-slant">-,---</span><span class="stat-unit">km</span></div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Horizon Elevation</div>
+            <div class="stat-val" id="val-el">--.-°</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Compass Bearing</div>
+            <div class="stat-val"><span id="val-bearing">---°</span> <span class="stat-unit" id="val-heading">--</span></div>
+          </div>
+        </div>
+        <div style="font-size:0.75rem; color: var(--text-muted); display:flex; justify-content:space-between; margin-top:2px;">
+          <span>Closest Approach: <strong id="val-min-dist" style="color:#fff;">-- km</strong></span>
+          <span>Alert Radius: <strong id="val-thresh" style="color:var(--accent-cyan);">1000 km</strong></span>
+        </div>
+      </div>
+
+      <!-- Station Coordinates Info -->
+      <div class="card">
+        <div class="card-title">
+          <span>Ground Coordinates</span>
+          <span style="font-size:0.7rem; color:var(--text-muted);" id="val-obs-coords">--</span>
+        </div>
+        <div style="font-size:0.75rem; color:var(--text-muted); line-height:1.4;">
+          Native desktop alerts via <code style="color:var(--accent-cyan); background:rgba(0,0,0,0.3); padding:2px 4px; border-radius:3px;">notify-send</code> are armed in Ubuntu. An alert will pop up on your screen when the ISS crosses the threshold.
+        </div>
+      </div>
+
+      <div class="hud-footer">
+        SpaceSuite v0.1.0 • Live Telemetry from WhereTheISS.at • Real-time orbital math
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // Mission Control JavaScript Frontend
+    let map;
+    let issMarker;
+    let homeMarker;
+    let footprintCircle;
+    let distanceLine;
+    let trackPolyline;
+    let trackHistory = [];
+    let followISS = true;
+    let minDistance = null;
+
+    // Custom Icons
+    const issIcon = L.divIcon({
+      className: 'custom-iss-icon',
+      html: `
+        <div style="background: rgba(56, 189, 248, 0.2); border: 2px solid #38bdf8; border-radius: 50%; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 15px rgba(56, 189, 248, 0.8);">
+          <span style="font-size: 24px; filter: drop-shadow(0 0 4px #fff);">🛰️</span>
+        </div>
+      `,
+      iconSize: [44, 44],
+      iconAnchor: [22, 22]
+    });
+
+    const homeIcon = L.divIcon({
+      className: 'custom-home-icon',
+      html: `
+        <div style="background: rgba(74, 222, 128, 0.2); border: 2px solid #4ade80; border-radius: 50%; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 10px rgba(74, 222, 128, 0.6);">
+          <span style="font-size: 18px;">📡</span>
+        </div>
+      `,
+      iconSize: [34, 34],
+      iconAnchor: [17, 17]
+    });
+
+    // Initialize Map
+    function initMap() {
+      map = L.map('map', {
+        zoomControl: false,
+        attributionControl: false,
+        worldCopyJump: true
+      }).setView([20, 0], 3);
+
+      L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+      // Dark Matter Map Tiles (Clean, aerospace dark theme)
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        maxZoom: 19,
+        subdomains: 'abcd',
+      }).addTo(map);
+
+      // Orbital Track Polyline
+      trackPolyline = L.polyline([], {
+        color: '#38bdf8',
+        weight: 2,
+        opacity: 0.6,
+        dashArray: '4, 6'
+      }).addTo(map);
+
+      // Distance Line
+      distanceLine = L.polyline([], {
+        color: '#facc15',
+        weight: 1.5,
+        opacity: 0.8,
+        dashArray: '2, 4'
+      }).addTo(map);
+
+      // User interaction disables auto-follow temporarily
+      map.on('dragstart', () => {
+        followISS = false;
+        document.getElementById('btn-recenter').style.opacity = '0.5';
+      });
+    }
+
+    // Update Clock
+    function updateClock() {
+      const now = new Date();
+      document.getElementById('utc-clock').innerText = now.toUTCString().slice(17, 25) + ' UTC';
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // Fetch Telemetry from local SpaceSuite Server
+    async function pollTelemetry() {
+      try {
+        const res = await fetch('/api/telemetry');
+        if (!res.ok) throw new Error('Downlink offline');
+        const data = await res.json();
+        updateUI(data);
+      } catch (err) {
+        console.warn('Telemetry fetch error:', err);
+        document.getElementById('downlink-badge').className = 'badge badge-yellow';
+        document.getElementById('downlink-badge').innerText = '⚠️ RECONNECTING...';
+      }
+    }
+
+    // Update UI Elements and Map
+    function updateUI(data) {
+      document.getElementById('downlink-badge').className = 'badge badge-green';
+      document.getElementById('downlink-badge').innerText = '● LIVE TELEMETRY';
+
+      const iss = data.iss;
+      const obs = data.observer;
+      const rel = data.relative;
+
+      // Update Observer info
+      document.getElementById('observer-name').innerText = obs.name;
+      document.getElementById('val-obs-coords').innerText = `${obs.lat_str}, ${obs.lon_str}`;
+      document.getElementById('val-thresh').innerText = `${data.threshold_km} km`;
+
+      // Update Telemetry Values
+      document.getElementById('val-lat').innerText = iss.lat_str;
+      document.getElementById('val-lon').innerText = iss.lon_str;
+      document.getElementById('val-alt').innerText = iss.altitude_km.toFixed(1);
+      document.getElementById('val-vel').innerText = Math.round(iss.velocity_kmh).toLocaleString();
+      document.getElementById('val-vel-kms').innerText = iss.velocity_kms.toFixed(2);
+      document.getElementById('val-mach').innerText = (iss.velocity_kmh / 1234.8).toFixed(1);
+
+      // Sunlight badge
+      const visBadge = document.getElementById('vis-badge');
+      if (iss.is_sunlit) {
+        visBadge.className = 'badge badge-yellow';
+        visBadge.innerText = '☀️ DAYLIGHT';
+      } else {
+        visBadge.className = 'badge badge-blue';
+        visBadge.innerText = '🌑 EARTH SHADOW';
+      }
+
+      // Relativity Values
+      document.getElementById('val-dist').innerText = Math.round(rel.ground_distance_km).toLocaleString();
+      document.getElementById('val-slant').innerText = Math.round(rel.slant_range_km).toLocaleString();
+      document.getElementById('val-el').innerText = `${rel.elevation_deg >= 0 ? '+' : ''}${rel.elevation_deg.toFixed(1)}°`;
+      document.getElementById('val-bearing').innerText = `${Math.round(rel.bearing_deg)}°`;
+      document.getElementById('val-heading').innerText = rel.compass_heading;
+
+      // Track closest approach
+      if (minDistance === null || rel.ground_distance_km < minDistance) {
+        minDistance = rel.ground_distance_km;
+        document.getElementById('val-min-dist').innerText = `${Math.round(minDistance).toLocaleString()} km`;
+      }
+
+      // Pass Alert Banner
+      const banner = document.getElementById('pass-banner');
+      if (rel.is_in_range) {
+        banner.className = 'pass-banner overhead';
+        banner.innerHTML = `<span>🚨 OVERHEAD PASS IN RANGE! (${Math.round(rel.ground_distance_km)} km)</span>`;
+      } else {
+        banner.className = 'pass-banner standby';
+        banner.innerHTML = `<span>○ STANDBY • ISS OUT OF RANGE</span>`;
+      }
+
+      // Leaflet Map Updates
+      const issPos = [iss.latitude, iss.longitude];
+      const obsPos = [obs.latitude, obs.longitude];
+
+      // Update or create Home Marker
+      if (!homeMarker) {
+        homeMarker = L.marker(obsPos, { icon: homeIcon })
+          .addTo(map)
+          .bindPopup(`<b>${obs.name}</b><br>Ground Station (${obs.lat_str}, ${obs.lon_str})`);
+      }
+
+      // Update or create ISS Marker
+      if (!issMarker) {
+        issMarker = L.marker(issPos, { icon: issIcon })
+          .addTo(map)
+          .bindPopup(`<b>International Space Station</b><br>Altitude: ${iss.altitude_km.toFixed(1)} km<br>Speed: ${Math.round(iss.velocity_kmh)} km/h`);
+      } else {
+        issMarker.setLatLng(issPos);
+      }
+
+      // Visibility Footprint Circle
+      const footprintRadiusMeters = (iss.footprint_km / 2.0) * 1000.0;
+      if (!footprintCircle) {
+        footprintCircle = L.circle(issPos, {
+          radius: footprintRadiusMeters,
+          color: '#38bdf8',
+          fillColor: '#38bdf8',
+          fillOpacity: 0.08,
+          weight: 1
+        }).addTo(map);
+      } else {
+        footprintCircle.setLatLng(issPos);
+        footprintCircle.setRadius(footprintRadiusMeters);
+      }
+
+      // Distance Line between Home and ISS
+      distanceLine.setLatLngs([obsPos, issPos]);
+
+      // Ground Track Polyline (keep recent points)
+      trackHistory.push(issPos);
+      if (trackHistory.length > 50) trackHistory.shift();
+      trackPolyline.setLatLngs(trackHistory);
+
+      // Follow ISS pan
+      if (followISS) {
+        map.panTo(issPos, { animate: true, duration: 1 });
+      }
+    }
+
+    // Button event handlers
+    document.getElementById('btn-recenter').addEventListener('click', () => {
+      followISS = true;
+      document.getElementById('btn-recenter').style.opacity = '1';
+      if (issMarker) map.setView(issMarker.getLatLng(), map.getZoom(), { animate: true });
+    });
+
+    document.getElementById('btn-notify-test').addEventListener('click', async () => {
+      try {
+        const btn = document.getElementById('btn-notify-test');
+        btn.innerText = 'Sending...';
+        const res = await fetch('/api/test-notify', { method: 'POST' });
+        const data = await res.json();
+        btn.innerText = data.success ? '✓ Alert Sent!' : '⚠️ Failed';
+        setTimeout(() => { btn.innerText = '🔔 Test Alert'; }, 2000);
+      } catch (err) {
+        alert('Failed to send notification: ' + err);
+      }
+    });
+
+    document.getElementById('btn-sim-toggle').addEventListener('click', async () => {
+      const btn = document.getElementById('btn-sim-toggle');
+      btn.innerText = 'Simulating Pass...';
+      try {
+        await fetch('/api/simulate-pass', { method: 'POST' });
+        setTimeout(() => { btn.innerText = '🚀 Simulate Pass'; }, 15000);
+      } catch (err) {
+        alert('Simulation error: ' + err);
+      }
+    });
+
+    // Start Map and Polling Loop
+    window.addEventListener('DOMContentLoaded', () => {
+      initMap();
+      pollTelemetry();
+      setInterval(pollTelemetry, 1500);
+    });
+  </script>
+</body>
+</html>
