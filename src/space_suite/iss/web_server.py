@@ -154,6 +154,16 @@ class ISSWebHandler(SimpleHTTPRequestHandler):
             self.end_headers()
             index_path = STATIC_DIR / "index.html"
             self.wfile.write(index_path.read_bytes())
+        elif self.path == "/leaflet.js":
+            self.send_response(HTTPStatus.OK)
+            self.send_header("Content-Type", "application/javascript")
+            self.end_headers()
+            self.wfile.write((STATIC_DIR / "leaflet.js").read_bytes())
+        elif self.path == "/leaflet.css":
+            self.send_response(HTTPStatus.OK)
+            self.send_header("Content-Type", "text/css")
+            self.end_headers()
+            self.wfile.write((STATIC_DIR / "leaflet.css").read_bytes())
         elif self.path == "/api/telemetry":
             self.send_response(HTTPStatus.OK)
             self.send_header("Content-Type", "application/json")
