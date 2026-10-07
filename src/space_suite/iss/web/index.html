@@ -319,6 +319,7 @@
     </div>
 
     <div class="header-actions">
+      <button class="btn" id="btn-audio-toggle" title="Toggle audio alert chime">🔊 Audio: ON</button>
       <button class="btn" id="btn-recenter" title="Center map on ISS">🎯 Follow ISS</button>
       <button class="btn" id="btn-notify-test" title="Send Ubuntu desktop alert">🔔 Test Alert</button>
       <button class="btn" id="btn-sim-toggle" title="Toggle 12s overhead pass demo">🚀 Simulate Pass</button>
@@ -359,8 +360,16 @@
             <div class="stat-val"><span id="val-alt">---</span><span class="stat-unit">km</span></div>
           </div>
           <div class="stat-box">
+            <div class="stat-label">Orbital Period (T)</div>
+            <div class="stat-val"><span id="val-period">92.9</span><span class="stat-unit">min</span></div>
+          </div>
+          <div class="stat-box">
             <div class="stat-label">Orbital Velocity</div>
             <div class="stat-val"><span id="val-vel">--,---</span><span class="stat-unit">km/h</span></div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Earth Orbits / Day</div>
+            <div class="stat-val"><span id="val-orbits-day">15.5</span><span class="stat-unit">laps</span></div>
           </div>
           <div class="stat-box">
             <div class="stat-label">Speed in km/s</div>
@@ -575,6 +584,13 @@
       document.getElementById('val-vel-kms').innerText = iss.velocity_kms.toFixed(2);
       document.getElementById('val-mach').innerText = (iss.velocity_kmh / 1234.8).toFixed(1);
 
+      if (iss.orbital_period_mins) {
+        document.getElementById('val-period').innerText = iss.orbital_period_mins.toFixed(1);
+      }
+      if (iss.orbits_per_day) {
+        document.getElementById('val-orbits-day').innerText = iss.orbits_per_day.toFixed(1);
+      }
+
       // Sunlight badge
       const visBadge = document.getElementById('vis-badge');
       if (iss.is_sunlit) {
@@ -598,15 +614,19 @@
         document.getElementById('val-min-dist').innerText = `${Math.round(minDistance).toLocaleString()} km`;
       }
 
-      // Pass Alert Banner
+      // Pass Alert Banner & Audio Chime on Entry
       const banner = document.getElementById('pass-banner');
       if (rel.is_in_range) {
         banner.className = 'pass-banner overhead';
         banner.innerHTML = `<span>🚨 OVERHEAD PASS IN RANGE! (${Math.round(rel.ground_distance_km)} km)</span>`;
+        if (!wasInRange) {
+          playQuindarChime('pass');
+        }
       } else {
         banner.className = 'pass-banner standby';
         banner.innerHTML = `<span>○ STANDBY • ISS OUT OF RANGE</span>`;
       }
+      wasInRange = rel.is_in_range;
 
       // Leaflet Map Updates
       const issPos = [iss.latitude, iss.longitude];
@@ -657,6 +677,73 @@
       }
     }
 
+    // Web Audio API Synthesizer (Apollo / ISS Quindar Chime)
+    let audioCtx = null;
+    let audioEnabled = localStorage.getItem('spacesuite_audio') !== 'false';
+    let wasInRange = false;
+
+    function initAudio() {
+      if (!audioCtx) {
+        const AudioClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioClass) audioCtx = new AudioClass();
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function playQuindarChime(type = 'intro') {
+      if (!audioEnabled) return;
+      try {
+        initAudio();
+        if (!audioCtx) return;
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        if (type === 'pass') {
+          // Dual-tone aerospace alert chime: 587 Hz (D5) -> 880 Hz (A5)
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(587.3, now);
+          osc.frequency.exponentialRampToValueAtTime(880.0, now + 0.12);
+          gain.gain.setValueAtTime(0.18, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+          osc.start(now);
+          osc.stop(now + 0.45);
+        } else {
+          // Authentic NASA Quindar tone: 2524 Hz sine for 220ms
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(2524, now);
+          gain.gain.setValueAtTime(0.10, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+          osc.start(now);
+          osc.stop(now + 0.22);
+        }
+      } catch (err) {
+        console.warn('Audio synthesis notice:', err);
+      }
+    }
+
+    // Audio button UI toggle
+    const audioBtn = document.getElementById('btn-audio-toggle');
+    function updateAudioButtonUI() {
+      audioBtn.innerText = audioEnabled ? '🔊 Audio: ON' : '🔇 Audio: OFF';
+      audioBtn.style.color = audioEnabled ? 'var(--accent-cyan)' : 'var(--text-muted)';
+    }
+    updateAudioButtonUI();
+
+    audioBtn.addEventListener('click', () => {
+      audioEnabled = !audioEnabled;
+      localStorage.setItem('spacesuite_audio', audioEnabled.toString());
+      updateAudioButtonUI();
+      if (audioEnabled) {
+        initAudio();
+        playQuindarChime('intro');
+      }
+    });
+
     // Button event handlers
     document.getElementById('btn-recenter').addEventListener('click', () => {
       followISS = true;
@@ -668,6 +755,7 @@
       try {
         const btn = document.getElementById('btn-notify-test');
         btn.innerText = 'Sending...';
+        playQuindarChime('pass');
         const res = await fetch('/api/test-notify', { method: 'POST' });
         const data = await res.json();
         btn.innerText = data.success ? '✓ Alert Sent!' : '⚠️ Failed';
@@ -680,6 +768,7 @@
     document.getElementById('btn-sim-toggle').addEventListener('click', async () => {
       const btn = document.getElementById('btn-sim-toggle');
       btn.innerText = 'Simulating Pass...';
+      playQuindarChime('intro');
       try {
         await fetch('/api/simulate-pass', { method: 'POST' });
         setTimeout(() => { btn.innerText = '🚀 Simulate Pass'; }, 15000);

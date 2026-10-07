@@ -15,7 +15,10 @@ from typing import Any
 from space_suite.iss.client import ISSClient, TelemetryError
 from space_suite.iss.models import ISSTelemetry, ObserverCoords, RelativePosition
 from space_suite.iss.notifier import UbuntuNotifier
-from space_suite.iss.orbital_math import compute_relative_position
+from space_suite.iss.orbital_math import (
+    calculate_orbital_period_minutes,
+    compute_relative_position,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -122,6 +125,8 @@ class TelemetryState:
                 "is_sunlit": iss.is_sunlit,
                 "footprint_km": iss.footprint_km,
                 "timestamp": iss.timestamp,
+                "orbital_period_mins": round(calculate_orbital_period_minutes(iss.altitude_km), 2),
+                "orbits_per_day": round(1440.0 / calculate_orbital_period_minutes(iss.altitude_km), 1),
             },
             "relative": {
                 "ground_distance_km": rel.ground_distance_km,

@@ -13,15 +13,25 @@ A modular Python suite of spaceflight tools built from scratch for Ubuntu Linux.
 ## Module 1: Live ISS Tracker & Overhead Pass Alert
 
 ### Key Features
-1. **Live Orbital Telemetry**: Real-time downlink from the NORAD #25544 transponder via `api.wheretheiss.at` (Latitude, Longitude, Altitude, Orbital Velocity in km/h & km/s, Mach number, Solar Illumination / Earth Eclipse).
-2. **3D Spherical & Orbital Geometry**:
+1. **Interactive Mission Control Web Dashboard (`--web`)**:
+   - High-resolution photographic Earth satellite imagery from space (Esri World Imagery + OpenStreetMap layer switcher).
+   - Moving sub-satellite marker (`🛰️`), continuous ground track path, and $\sim 2,200\text{ km}$ visibility footprint.
+   - Pulsing home ground station marker (`📡`) and direct geodesic line of sight.
+   - Apollo / ISS Quindar audio chime synthesizer via Web Audio API with UI toggle.
+2. **Keplerian Orbital Mechanics**:
+   - Calculates instantaneous orbital period ($T = 2\pi\sqrt{a^3/\mu} \approx 92.9\text{ mins}$) and daily orbits ($\sim 15.5\text{ laps/day}$).
+3. **Dual-Redundant Telemetry Engine**:
+   - Primary downlink: NORAD #25544 transponder via `api.wheretheiss.at`.
+   - Secondary fallback: Open-Notify (`api.open-notify.org/iss-now.json`).
+   - Zero-drop connection resilience with HTTP keep-alive recovery.
+4. **3D Spherical & Orbital Geometry**:
    - **Haversine Distance**: Surface great-circle ground distance to observer.
    - **Slant Range**: Direct line-of-sight Euclidean distance taking altitude into account.
    - **Horizon Elevation Angle**: Geometric angle above local horizon ($\ge 0^\circ$ means line of sight).
    - **Compass Azimuth & Heading**: Forward bearing (e.g. $142^\circ$ SE).
-3. **Ubuntu Desktop Notifications**: Native integration via `notify-send` when the ISS passes within visible range overhead, with intelligent pass debouncing and cooldown.
-4. **Rich Terminal Dashboard**: Auto-refreshing, aerospace-styled terminal interface with historical telemetry trail and trend indicators.
-5. **Pass Simulation Mode**: `--simulate-pass` flag to verify alerts and dashboard behavior immediately without waiting for an orbit pass.
+5. **Ubuntu Desktop Notifications**: Native integration via `notify-send` when the ISS passes within visible range overhead, with intelligent pass debouncing and cooldown.
+6. **Rich Terminal Dashboard**: Auto-refreshing, aerospace-styled terminal interface with historical telemetry trail and trend indicators.
+7. **Pass Simulation Mode**: `--simulate-pass` flag or web button to verify alerts and dashboard behavior immediately without waiting for an orbit pass.
 
 ---
 

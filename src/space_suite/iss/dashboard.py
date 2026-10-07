@@ -14,6 +14,7 @@ from rich.table import Table
 from rich.text import Text
 
 from space_suite.iss.models import ISSTelemetry, ObserverCoords, RelativePosition
+from space_suite.iss.orbital_math import calculate_orbital_period_minutes
 
 
 class ISSDashboard:
@@ -154,6 +155,13 @@ class ISSDashboard:
         )
         mach = iss.velocity_kmh / 1234.8
         table.add_row("Equivalent Mach", f"Mach {mach:.1f}")
+
+        period_min = calculate_orbital_period_minutes(iss.altitude_km)
+        laps_day = 1440.0 / period_min
+        table.add_row(
+            "Orbital Period (T)",
+            f"{period_min:.2f} min [dim]({laps_day:.1f} orbits/day)[/]",
+        )
 
         sunlight_badge = (
             "[bold yellow]☀️ SUNLIT (DAYLIGHT)[/]"

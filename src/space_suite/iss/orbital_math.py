@@ -159,3 +159,25 @@ def compute_relative_position(
         is_above_horizon=above_horizon,
         is_in_range=in_range,
     )
+
+
+EARTH_MU_KM3_S2: float = 398600.4418  # Standard gravitational parameter GM in km^3/s^2
+
+
+def calculate_orbital_period_seconds(
+    altitude_km: float,
+    radius_km: float = EARTH_RADIUS_KM,
+    mu_km3_s2: float = EARTH_MU_KM3_S2,
+) -> float:
+    """Compute circular orbital period in seconds using Kepler's 3rd law: T = 2*pi*sqrt(a^3 / mu)."""
+    semi_major_axis = radius_km + altitude_km
+    return 2.0 * math.pi * math.sqrt((semi_major_axis**3) / mu_km3_s2)
+
+
+def calculate_orbital_period_minutes(
+    altitude_km: float,
+    radius_km: float = EARTH_RADIUS_KM,
+    mu_km3_s2: float = EARTH_MU_KM3_S2,
+) -> float:
+    """Orbital period in minutes."""
+    return calculate_orbital_period_seconds(altitude_km, radius_km, mu_km3_s2) / 60.0

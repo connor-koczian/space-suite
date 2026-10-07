@@ -116,3 +116,18 @@ def test_compute_relative_position():
     assert rel.elevation_deg == pytest.approx(90.0, abs=1e-4)
     assert rel.is_above_horizon is True
     assert rel.is_in_range is True
+
+
+def test_calculate_orbital_period():
+    from space_suite.iss.orbital_math import (
+        calculate_orbital_period_minutes,
+        calculate_orbital_period_seconds,
+    )
+
+    # At 425 km circular orbit, orbital period should be approx 93 minutes (~5580 seconds)
+    period_sec = calculate_orbital_period_seconds(425.0)
+    period_min = calculate_orbital_period_minutes(425.0)
+
+    assert 5500.0 < period_sec < 5650.0
+    assert 92.0 < period_min < 94.0
+    assert period_sec / 60.0 == pytest.approx(period_min, abs=1e-5)
