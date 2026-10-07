@@ -76,11 +76,18 @@ class LaunchItem:
 
     @property
     def is_spacex(self) -> bool:
-        return "spacex" in self.provider_name.lower() or "falcon" in self.rocket.name.lower() or "starship" in self.rocket.name.lower()
+        return (
+            "spacex" in self.provider_name.lower()
+            or "falcon" in self.rocket.name.lower()
+            or "starship" in self.rocket.name.lower()
+        )
 
     @property
     def is_starship(self) -> bool:
-        return "starship" in self.rocket.name.lower() or "super heavy" in self.rocket.name.lower()
+        return (
+            "starship" in self.rocket.name.lower()
+            or "super heavy" in self.rocket.name.lower()
+        )
 
     @property
     def livestream_url(self) -> str | None:
@@ -95,7 +102,9 @@ class LaunchItem:
         current = now or datetime.now(UTC)
         return (self.net_time - current).total_seconds()
 
-    def get_countdown_tuple(self, now: datetime | None = None) -> tuple[str, int, int, int, int]:
+    def get_countdown_tuple(
+        self, now: datetime | None = None
+    ) -> tuple[str, int, int, int, int]:
         """Returns sign ('-' or '+'), days, hours, minutes, seconds."""
         rem = self.get_remaining_seconds(now)
         sign = "-" if rem >= 0 else "+"

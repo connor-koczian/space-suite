@@ -40,7 +40,9 @@ class LaunchDashboard:
 
         layout["header"].update(self._render_header(now))
         layout["featured"].update(self._render_featured(next_launch, now, error_msg))
-        layout["manifest"].update(self._render_manifest(launches[1:6] if launches else []))
+        layout["manifest"].update(
+            self._render_manifest(launches[1:6] if launches else [])
+        )
         layout["footer"].update(self._render_footer())
 
         return layout
@@ -51,7 +53,9 @@ class LaunchDashboard:
         title_text.append("• LAUNCH TELEMETRY COUNTDOWN", style="bold white")
 
         now_str = now.strftime("%Y-%m-%d %H:%M:%S UTC")
-        status_text = Text(f"FILTER: {self.filter_name.upper()} | CLOCK: {now_str}", style="dim")
+        status_text = Text(
+            f"FILTER: {self.filter_name.upper()} | CLOCK: {now_str}", style="dim"
+        )
 
         table = Table.grid(expand=True)
         table.add_column(justify="left")
@@ -68,7 +72,9 @@ class LaunchDashboard:
     ) -> Panel:
         if error_msg:
             return Panel(
-                Align.center(f"[bold red]⚠️ Telemetry Signal Interrupted[/]\n\n[yellow]{error_msg}[/]"),
+                Align.center(
+                    f"[bold red]⚠️ Telemetry Signal Interrupted[/]\n\n[yellow]{error_msg}[/]"
+                ),
                 title="Launch Link Warning",
                 border_style="red",
                 box=ROUNDED,
@@ -76,7 +82,9 @@ class LaunchDashboard:
 
         if not launch:
             return Panel(
-                Align.center("[yellow]Awaiting upcoming rocket launch manifest downlink...[/]"),
+                Align.center(
+                    "[yellow]Awaiting upcoming rocket launch manifest downlink...[/]"
+                ),
                 box=ROUNDED,
             )
 
@@ -95,12 +103,20 @@ class LaunchDashboard:
         meta_table.add_column("Value", style="bold white")
 
         meta_table.add_row("Mission Name", launch.name)
-        meta_table.add_row("Launch Provider", f"{launch.provider_name} [dim]({launch.provider_type})[/]")
+        meta_table.add_row(
+            "Launch Provider",
+            f"{launch.provider_name} [dim]({launch.provider_type})[/]",
+        )
         meta_table.add_row("Rocket Vehicle", launch.rocket.display_name)
         if launch.is_starship:
-            meta_table.add_row("Vehicle Class", "[bold magenta]⭐ Starship Super Heavy (Next-Gen Heavy Lift)[/]")
+            meta_table.add_row(
+                "Vehicle Class",
+                "[bold magenta]⭐ Starship Super Heavy (Next-Gen Heavy Lift)[/]",
+            )
         elif launch.is_spacex:
-            meta_table.add_row("Vehicle Class", "[bold cyan]Falcon Reusable Booster Architecture[/]")
+            meta_table.add_row(
+                "Vehicle Class", "[bold cyan]Falcon Reusable Booster Architecture[/]"
+            )
 
         meta_table.add_row(
             "Target NET Liftoff",
@@ -113,7 +129,9 @@ class LaunchDashboard:
             meta_table.add_row("Payload Type", launch.mission.mission_type)
 
         if launch.livestream_url:
-            meta_table.add_row("Webcast Stream", f"[underline blue]{launch.livestream_url}[/]")
+            meta_table.add_row(
+                "Webcast Stream", f"[underline blue]{launch.livestream_url}[/]"
+            )
 
         # Combine countdown and metadata
         container = Table.grid(expand=True)
@@ -121,7 +139,11 @@ class LaunchDashboard:
         container.add_row(Align.center(cd_title))
         container.add_row(meta_table)
 
-        status_badge = "[bold green]● GO FOR LAUNCH[/]" if "go" in launch.status_name.lower() else f"[yellow]● {launch.status_name.upper()}[/]"
+        status_badge = (
+            "[bold green]● GO FOR LAUNCH[/]"
+            if "go" in launch.status_name.lower()
+            else f"[yellow]● {launch.status_name.upper()}[/]"
+        )
         return Panel(
             container,
             title=f"[bold red]★ Upcoming Primary Mission: {launch.rocket.name} | {status_badge}",
@@ -140,7 +162,9 @@ class LaunchDashboard:
 
         now = datetime.now(UTC)
         if not next_launches:
-            table.add_row("—", "—", "—", "No additional launches queued in manifest", "—", "—")
+            table.add_row(
+                "—", "—", "—", "No additional launches queued in manifest", "—", "—"
+            )
         else:
             for item in next_launches:
                 table.add_row(

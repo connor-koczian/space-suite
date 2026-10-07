@@ -9,6 +9,7 @@ authors = [
 requires-python = ">=3.12"
 dependencies = [
     "httpx>=0.28.1",
+    "pygame>=2.6.0",
     "rich>=15.0.0",
 ]
 
@@ -16,6 +17,7 @@ dependencies = [
 space-suite = "space_suite.cli:main"
 iss-tracker = "space_suite.iss.tracker:main"
 launch-control = "space_suite.launch.tracker:main"
+lander = "space_suite.lander.sim:main"
 
 [build-system]
 requires = ["uv_build>=0.12.18,<0.13.0"]

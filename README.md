@@ -119,13 +119,79 @@ Access at `http://127.0.0.1:8056`.
 
 ---
 
+## Module 3: Starship / Lunar Lander "Suicide Burn" 2D Physics Simulator
+
+Simulate the high-stakes propulsive landing of a Starship Super Heavy, Falcon 9 booster, or Apollo Lunar Module using authentic celestial mechanics, variable thrust gimbaling, cold-gas reaction control thrusters, and autonomous guidance software.
+
+### The Physics: Why a "Suicide Burn" (Hoverslam)?
+Orbital rocket stages cannot throttle down to 0% continuously; their minimum deep throttle produces more thrust than the empty vehicle weight ($T_{\text{min}} > m_{\text{dry}} g$), which means **a landing booster cannot hover** in mid-air. If the pilot ignites too early, the rocket halts above the ground and begins accelerating *back up into the sky*, exhausting fuel and crashing.
+
+The autonomous flight computer (GNC) calculates the **exact point of no return** by balancing total descent mechanical energy against planned deceleration capacity:
+$$y_{\text{burn}} = \frac{v_y^2 + 2 g y}{2 a_{\text{plan}}}$$
+
+The flight computer stays shut down in free-fall until entering the ignition envelope, ignites at planned throttle, modulates deceleration via closed-loop feedback, damps lateral crossrange drift to zero, and cuts the engine precisely at touchdown.
+
+### Key Features
+1. **Desktop Native 60 FPS Vector Simulator (`lander`)**:
+   - High-performance Pygame display with rotated vector spacecraft polygons.
+   - Dynamic camera zooming in on landing pad for terminal descent drama.
+   - Multicolored rocket engine exhaust plume with blue/orange Mach diamonds.
+   - Cold-gas nitrogen RCS attitude thruster puffs.
+   - Deployable landing gear struts below 60 meters.
+   - Interactive keyboard flight controls:
+     - `↑` / `↓`: Main engine throttle up/down
+     - `←` / `→`: RCS attitude tilt / engine gimbal
+     - `A`: Toggle Autopilot on/off (Manual Flight vs Autonomous GNC)
+     - `Space`: Immediate engine cutoff
+     - `R`: Reset flight simulation
+     - `1` / `2` / `3`: Switch vehicles (Starship / Falcon 9 / Lunar Lander)
+2. **Interactive Browser Mission Control (`--web`)**:
+   - 60 FPS HTML5 Canvas vector animation at `http://127.0.0.1:8057`.
+   - Real-time digital telemetry tapes (Altitude, Vertical Velocity, Lateral Drift, Pad Offset, Throttle, Fuel).
+   - Web Audio API real-time rocket engine rumble synthesizer.
+   - Interactive manual throttle slider and attitude tilt buttons.
+3. **Pure Terminal Mode (`--terminal`)**:
+   - Real-time ASCII aerospace HUD using `rich.live.Live` with speed gauges, fuel bars, and touchdown status reports.
+4. **Vehicles & Planetary Environments**:
+   - **Starship Super Heavy (Earth)**: 100t dry mass, 3 Center Raptor engines ($6.6\text{ MN}$ thrust), $I_{\text{sp}}=330\text{ s}$.
+   - **Falcon 9 First Stage (Earth)**: 25t dry mass, single Merlin 1D landing burn ($845\text{ kN}$ thrust), $I_{\text{sp}}=282\text{ s}$.
+   - **Apollo Lunar Module (Moon)**: 4.7t dry mass, deep-throttleable LMDE ($45\text{ kN}$ thrust), lunar vacuum gravity ($g=1.62\text{ m/s}^2$).
+
+### Usage Commands
+
+#### 1. Native Desktop Graphical Window (Pygame 60 FPS)
+```bash
+uv run lander
+```
+
+#### 2. Interactive Web Mission Control Dashboard
+```bash
+uv run lander --web
+```
+Access at `http://127.0.0.1:8057`.
+
+#### 3. Pure Terminal Aerospace Mode
+```bash
+uv run lander --terminal
+```
+
+#### 4. Fly Specific Vehicle / Environment
+```bash
+uv run lander -v falcon9
+uv run lander -v lunar -e moon
+uv run lander --manual
+```
+
+---
+
 ## Top-Level Suite Launcher
 
 Launch any module directly from the unified CLI:
 ```bash
 uv run space-suite iss
 uv run space-suite launch
-uv run space-suite launch --web
+uv run space-suite lander
+uv run space-suite lander --web
 ```
 
 ---

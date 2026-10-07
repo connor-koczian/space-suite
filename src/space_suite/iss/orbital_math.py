@@ -10,16 +10,30 @@ from space_suite.iss.models import ISSTelemetry, ObserverCoords, RelativePositio
 EARTH_RADIUS_KM: float = 6371.0
 
 CARDINAL_DIRECTIONS: Sequence[str] = (
-    "N", "NNE", "NE", "ENE",
-    "E", "ESE", "SE", "SSE",
-    "S", "SSW", "SW", "WSW",
-    "W", "WNW", "NW", "NNW",
+    "N",
+    "NNE",
+    "NE",
+    "ENE",
+    "E",
+    "ESE",
+    "SE",
+    "SSE",
+    "S",
+    "SSW",
+    "SW",
+    "WSW",
+    "W",
+    "WNW",
+    "NW",
+    "NNW",
 )
 
 
-def central_angle(lat1_deg: float, lon1_deg: float, lat2_deg: float, lon2_deg: float) -> float:
+def central_angle(
+    lat1_deg: float, lon1_deg: float, lat2_deg: float, lon2_deg: float
+) -> float:
     """Compute central angle (in radians) between two geographic coordinates on Earth.
-    
+
     Uses Haversine formula for numerical stability at small distances.
     """
     phi1 = math.radians(lat1_deg)
@@ -57,7 +71,7 @@ def slant_range(
     radius_km: float = EARTH_RADIUS_KM,
 ) -> float:
     """Direct 3D Euclidean distance (line-of-sight slant range) in kilometers.
-    
+
     Derived from spherical law of cosines on the Earth-center triangle:
       r1 = radius + alt1
       r2 = radius + alt2
@@ -80,7 +94,7 @@ def elevation_angle(
     radius_km: float = EARTH_RADIUS_KM,
 ) -> float:
     """Calculate the satellite's elevation angle (degrees above the observer's horizon).
-    
+
     Returns:
         Degrees in range [-90.0, 90.0].
         Positive values (> 0°) mean the satellite is above the horizon (line of sight).
@@ -90,7 +104,9 @@ def elevation_angle(
     theta = central_angle(lat1_deg, lon1_deg, lat2_deg, lon2_deg)
     r1 = radius_km + alt1_km
     r2 = radius_km + alt2_km
-    d_slant = slant_range(lat1_deg, lon1_deg, alt1_km, lat2_deg, lon2_deg, alt2_km, radius_km)
+    d_slant = slant_range(
+        lat1_deg, lon1_deg, alt1_km, lat2_deg, lon2_deg, alt2_km, radius_km
+    )
 
     if d_slant < 1e-6:
         return 90.0
@@ -101,14 +117,18 @@ def elevation_angle(
     return math.degrees(math.asin(sin_el_clamped))
 
 
-def compass_bearing(lat1_deg: float, lon1_deg: float, lat2_deg: float, lon2_deg: float) -> float:
+def compass_bearing(
+    lat1_deg: float, lon1_deg: float, lat2_deg: float, lon2_deg: float
+) -> float:
     """Initial forward compass azimuth from point 1 to point 2 (degrees 0 to 360)."""
     phi1 = math.radians(lat1_deg)
     phi2 = math.radians(lat2_deg)
     delta_lambda = math.radians(lon2_deg - lon1_deg)
 
     y = math.sin(delta_lambda) * math.cos(phi2)
-    x = math.cos(phi1) * math.sin(phi2) - math.sin(phi1) * math.cos(phi2) * math.cos(delta_lambda)
+    x = math.cos(phi1) * math.sin(phi2) - math.sin(phi1) * math.cos(phi2) * math.cos(
+        delta_lambda
+    )
 
     bearing_deg = (math.degrees(math.atan2(y, x)) + 360.0) % 360.0
     return bearing_deg
@@ -127,7 +147,9 @@ def compute_relative_position(
     min_elevation_deg: float = 0.0,
 ) -> RelativePosition:
     """Compute complete relative geometry and status between observer and ISS."""
-    g_dist = haversine_distance(obs.latitude, obs.longitude, iss.latitude, iss.longitude)
+    g_dist = haversine_distance(
+        obs.latitude, obs.longitude, iss.latitude, iss.longitude
+    )
     s_range = slant_range(
         obs.latitude,
         obs.longitude,

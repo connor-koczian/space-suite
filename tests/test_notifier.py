@@ -43,7 +43,10 @@ def test_notifier_debounce(dummy_telemetry, dummy_observer):
             is_above_horizon=False,
             is_in_range=False,
         )
-        assert notifier.evaluate_and_notify(rel_out, dummy_telemetry, dummy_observer) is False
+        assert (
+            notifier.evaluate_and_notify(rel_out, dummy_telemetry, dummy_observer)
+            is False
+        )
         mock_send.assert_not_called()
 
         # Step 2: Enters range -> Should trigger notification
@@ -56,13 +59,22 @@ def test_notifier_debounce(dummy_telemetry, dummy_observer):
             is_above_horizon=True,
             is_in_range=True,
         )
-        assert notifier.evaluate_and_notify(rel_in, dummy_telemetry, dummy_observer) is True
+        assert (
+            notifier.evaluate_and_notify(rel_in, dummy_telemetry, dummy_observer)
+            is True
+        )
         assert mock_send.call_count == 1
 
         # Step 3: Still in range on next poll -> Should NOT trigger duplicate notification
-        assert notifier.evaluate_and_notify(rel_in, dummy_telemetry, dummy_observer) is False
+        assert (
+            notifier.evaluate_and_notify(rel_in, dummy_telemetry, dummy_observer)
+            is False
+        )
         assert mock_send.call_count == 1
 
         # Step 4: Leaves range -> Resets state
-        assert notifier.evaluate_and_notify(rel_out, dummy_telemetry, dummy_observer) is False
+        assert (
+            notifier.evaluate_and_notify(rel_out, dummy_telemetry, dummy_observer)
+            is False
+        )
         assert mock_send.call_count == 1

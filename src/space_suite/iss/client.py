@@ -67,7 +67,10 @@ class ISSClient:
         try:
             return self._query_primary()
         except TelemetryError as primary_err:
-            logger.warning("Primary telemetry source failed (%s). Attempting fallback...", primary_err)
+            logger.warning(
+                "Primary telemetry source failed (%s). Attempting fallback...",
+                primary_err,
+            )
             try:
                 return self._query_fallback()
             except (httpx.HTTPError, KeyError, ValueError, TypeError) as fallback_err:

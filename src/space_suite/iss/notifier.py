@@ -42,14 +42,14 @@ class UbuntuNotifier:
         expire_time_ms: int = 8000,
     ) -> bool:
         """Send a desktop notification using notify-send.
-        
+
         Args:
             summary: Notification title.
             body: Notification body text.
             urgency: One of 'low', 'normal', 'critical'.
             icon: Freedesktop icon name.
             expire_time_ms: Time before notification auto-dismisses.
-        
+
         Returns:
             True if dispatched successfully, False otherwise.
         """
@@ -57,15 +57,21 @@ class UbuntuNotifier:
             return False
 
         if not self._notify_bin:
-            logger.warning("notify-send binary not found. Desktop notification skipped.")
+            logger.warning(
+                "notify-send binary not found. Desktop notification skipped."
+            )
             return False
 
         cmd = [
             self._notify_bin,
-            "-a", self.app_name,
-            "-u", urgency,
-            "-t", str(expire_time_ms),
-            "-i", icon,
+            "-a",
+            self.app_name,
+            "-u",
+            urgency,
+            "-t",
+            str(expire_time_ms),
+            "-i",
+            icon,
             summary,
             body,
         ]
@@ -97,7 +103,7 @@ class UbuntuNotifier:
         obs: ObserverCoords,
     ) -> bool:
         """Check relative telemetry and fire notification if ISS newly enters visible range.
-        
+
         Debounced to prevent notification spamming on every polling cycle.
         """
         now = time.time()

@@ -98,13 +98,17 @@ class LaunchWebHandler(SimpleHTTPRequestHandler):
 
             try:
                 launches = self.client.fetch_upcoming(search=search_param, limit=10)
-                payload = json.dumps({
-                    "status": "online",
-                    "count": len(launches),
-                    "launches": [serialize_launch(l) for l in launches],
-                })
+                payload = json.dumps(
+                    {
+                        "status": "online",
+                        "count": len(launches),
+                        "launches": [serialize_launch(l) for l in launches],
+                    }
+                )
             except LaunchAPIError as err:
-                payload = json.dumps({"status": "error", "error": str(err), "launches": []})
+                payload = json.dumps(
+                    {"status": "error", "error": str(err), "launches": []}
+                )
 
             self.send_response(HTTPStatus.OK)
             self.send_header("Content-Type", "application/json")

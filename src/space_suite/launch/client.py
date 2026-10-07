@@ -86,7 +86,9 @@ class LaunchClient:
             self._cache[cache_key] = (now, launches)
             return launches
         except Exception as err:
-            logger.warning("Error fetching launches (%s). Checking cache fallback...", err)
+            logger.warning(
+                "Error fetching launches (%s). Checking cache fallback...", err
+            )
             if cache_key in self._cache:
                 return self._cache[cache_key][1]
             raise LaunchAPIError(f"Failed to fetch upcoming launches: {err}") from err
@@ -123,7 +125,9 @@ class LaunchClient:
             name=config_data.get("name", "Unknown Rocket"),
             family=config_data.get("family", ""),
             variant=config_data.get("variant", ""),
-            full_name=config_data.get("full_name", config_data.get("name", "Unknown Rocket")),
+            full_name=config_data.get(
+                "full_name", config_data.get("name", "Unknown Rocket")
+            ),
         )
 
         # Pad info
@@ -134,7 +138,9 @@ class LaunchClient:
             location_name=loc_data.get("name", "Unknown Location"),
             country_code=pad_data.get("country_code", "USA"),
             latitude=float(pad_data["latitude"]) if pad_data.get("latitude") else None,
-            longitude=float(pad_data["longitude"]) if pad_data.get("longitude") else None,
+            longitude=float(pad_data["longitude"])
+            if pad_data.get("longitude")
+            else None,
             map_url=pad_data.get("map_url"),
             wiki_url=pad_data.get("wiki_url"),
         )
@@ -146,7 +152,9 @@ class LaunchClient:
             orbit_data = mission_data.get("orbit", {})
             mission = MissionInfo(
                 name=mission_data.get("name", "Classified Payload"),
-                description=mission_data.get("description", "No mission description provided."),
+                description=mission_data.get(
+                    "description", "No mission description provided."
+                ),
                 mission_type=mission_data.get("type", "General Orbital"),
                 orbit_name=orbit_data.get("name", ""),
                 orbit_abbrev=orbit_data.get("abbrev", ""),

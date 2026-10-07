@@ -69,7 +69,9 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     dashboard = LaunchDashboard(filter_name=args.filter)
-    console.print(f"[bold red]Downlinking upcoming launches for '{args.filter}'... Press Ctrl+C to exit.[/]")
+    console.print(
+        f"[bold red]Downlinking upcoming launches for '{args.filter}'... Press Ctrl+C to exit.[/]"
+    )
 
     error_msg: str | None = None
     last_launches = []
@@ -81,28 +83,30 @@ def main(argv: list[str] | None = None) -> int:
             Live(console=console, screen=True, refresh_per_second=2) as live,
         ):
             while True:
-                    now = time.time()
-                    # Re-query API every 60 seconds
-                    if now - last_api_poll >= 60.0 or not last_launches:
-                        try:
-                            last_launches = client.fetch_upcoming(
-                                search=filter_query,
-                                limit=args.limit,
-                            )
-                            error_msg = None
-                            last_api_poll = now
-                        except LaunchAPIError as err:
-                            error_msg = str(err)
+                now = time.time()
+                # Re-query API every 60 seconds
+                if now - last_api_poll >= 60.0 or not last_launches:
+                    try:
+                        last_launches = client.fetch_upcoming(
+                            search=filter_query,
+                            limit=args.limit,
+                        )
+                        error_msg = None
+                        last_api_poll = now
+                    except LaunchAPIError as err:
+                        error_msg = str(err)
 
-                    renderable = dashboard.render(
-                        launches=last_launches,
-                        error_msg=error_msg,
-                    )
-                    live.update(renderable)
-                    time.sleep(args.interval)
+                renderable = dashboard.render(
+                    launches=last_launches,
+                    error_msg=error_msg,
+                )
+                live.update(renderable)
+                time.sleep(args.interval)
 
     except KeyboardInterrupt:
-        console.print("\n[bold yellow]Launch Mission Control terminated by operator. Standby.[/]")
+        console.print(
+            "\n[bold yellow]Launch Mission Control terminated by operator. Standby.[/]"
+        )
         return 0
     except (OSError, RuntimeError) as err:
         console.print(f"\n[bold red]Fatal error in mission control loop:[/] {err}")

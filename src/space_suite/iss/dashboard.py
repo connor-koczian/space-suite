@@ -45,19 +45,24 @@ class ISSDashboard:
                 trend = "● Steady"
 
         self.last_distance = rel.ground_distance_km
-        if self.min_distance_seen is None or rel.ground_distance_km < self.min_distance_seen:
+        if (
+            self.min_distance_seen is None
+            or rel.ground_distance_km < self.min_distance_seen
+        ):
             self.min_distance_seen = rel.ground_distance_km
 
-        self.history.append({
-            "time": iss.time_utc.strftime("%H:%M:%S"),
-            "lat": iss.lat_str,
-            "lon": iss.lon_str,
-            "alt": f"{iss.altitude_km:.1f} km",
-            "dist": f"{rel.ground_distance_km:,.1f} km",
-            "el": f"{rel.elevation_deg:+.1f}°",
-            "trend": trend,
-            "vis": "☀️ Day" if iss.is_sunlit else "🌑 Dark",
-        })
+        self.history.append(
+            {
+                "time": iss.time_utc.strftime("%H:%M:%S"),
+                "lat": iss.lat_str,
+                "lon": iss.lon_str,
+                "alt": f"{iss.altitude_km:.1f} km",
+                "dist": f"{rel.ground_distance_km:,.1f} km",
+                "el": f"{rel.elevation_deg:+.1f}°",
+                "trend": trend,
+                "vis": "☀️ Day" if iss.is_sunlit else "🌑 Dark",
+            }
+        )
 
     def render(
         self,
@@ -90,7 +95,10 @@ class ISSDashboard:
         title_text.append("• MISSION CONTROL TELEMETRY", style="bold white")
 
         now_utc = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S UTC")
-        status_text = Text(f"GROUND STATION: {self.observer.name} | SYSTEM CLOCK: {now_utc}", style="dim")
+        status_text = Text(
+            f"GROUND STATION: {self.observer.name} | SYSTEM CLOCK: {now_utc}",
+            style="dim",
+        )
 
         header_table = Table.grid(expand=True)
         header_table.add_column(justify="left")
@@ -118,7 +126,9 @@ class ISSDashboard:
 
         if error_msg:
             error_panel = Panel(
-                Align.center(f"[bold red]⚠️ Telemetry Signal Interrupted[/]\n\n[yellow]{error_msg}[/]"),
+                Align.center(
+                    f"[bold red]⚠️ Telemetry Signal Interrupted[/]\n\n[yellow]{error_msg}[/]"
+                ),
                 title="Telemetry Link Error",
                 border_style="red",
                 box=ROUNDED,
@@ -148,7 +158,10 @@ class ISSDashboard:
 
         table.add_row("Sub-Satellite Latitude", iss.lat_str)
         table.add_row("Sub-Satellite Longitude", iss.lon_str)
-        table.add_row("Orbital Altitude", f"{iss.altitude_km:.2f} km ({iss.altitude_km * 0.621371:.1f} mi)")
+        table.add_row(
+            "Orbital Altitude",
+            f"{iss.altitude_km:.2f} km ({iss.altitude_km * 0.621371:.1f} mi)",
+        )
         table.add_row(
             "Orbital Velocity",
             f"{iss.velocity_kmh:,.1f} km/h [dim]({iss.velocity_kms:.2f} km/s)[/]",
@@ -184,7 +197,9 @@ class ISSDashboard:
         table.add_column("Parameter", style="cyan", width=24)
         table.add_column("Value", style="bold white")
 
-        table.add_row("Observer Coordinates", f"{self.observer.lat_str}, {self.observer.lon_str}")
+        table.add_row(
+            "Observer Coordinates", f"{self.observer.lat_str}, {self.observer.lon_str}"
+        )
         table.add_row(
             "Surface Distance",
             f"{rel.ground_distance_km:,.1f} km [dim]({rel.ground_distance_miles:,.1f} mi)[/]",
@@ -205,15 +220,23 @@ class ISSDashboard:
             el_style = "dim"
             horizon_status = "BELOW HORIZON"
 
-        table.add_row("Horizon Elevation", f"[{el_style}]{rel.elevation_deg:+.2f}° [{horizon_status}][/{el_style}]")
-        table.add_row("Compass Bearing", f"{rel.bearing_deg:05.1f}° [bold magenta]{rel.compass_heading}[/]")
+        table.add_row(
+            "Horizon Elevation",
+            f"[{el_style}]{rel.elevation_deg:+.2f}° [{horizon_status}][/{el_style}]",
+        )
+        table.add_row(
+            "Compass Bearing",
+            f"{rel.bearing_deg:05.1f}° [bold magenta]{rel.compass_heading}[/]",
+        )
 
         # Pass status badge
         if rel.is_in_range:
             pass_status = "[bold white on red] 🛰️ OVERHEAD PASS IN RANGE! [/]"
             border_color = "red"
         else:
-            pass_status = f"[dim]STANDBY (Alert threshold: ≤ {self.threshold_km:.0f} km)[/]"
+            pass_status = (
+                f"[dim]STANDBY (Alert threshold: ≤ {self.threshold_km:.0f} km)[/]"
+            )
             border_color = "blue"
 
         table.add_row("Overhead Alert Status", pass_status)
@@ -240,7 +263,9 @@ class ISSDashboard:
         table.add_column("Sunlight", justify="center")
 
         if not self.history:
-            table.add_row("—", "—", "—", "—", "—", "—", "Awaiting telemetry samples...", "—")
+            table.add_row(
+                "—", "—", "—", "—", "—", "—", "Awaiting telemetry samples...", "—"
+            )
         else:
             for item in reversed(self.history):
                 trend_style = "bold green" if "Approaching" in item["trend"] else "dim"
@@ -264,7 +289,11 @@ class ISSDashboard:
 
     def _render_footer(self, poll_interval: float, notifier_active: bool) -> Panel:
         """Render bottom status bar and key bindings."""
-        notify_str = "[bold green]ACTIVE (notify-send ready)[/]" if notifier_active else "[yellow]DISABLED/UNAVAILABLE[/]"
+        notify_str = (
+            "[bold green]ACTIVE (notify-send ready)[/]"
+            if notifier_active
+            else "[yellow]DISABLED/UNAVAILABLE[/]"
+        )
         footer_text = Text.from_markup(
             f"Poll Interval: [cyan]{poll_interval:.1f}s[/] | "
             f"Desktop Alerts: {notify_str} | "

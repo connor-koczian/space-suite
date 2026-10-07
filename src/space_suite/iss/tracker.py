@@ -102,8 +102,8 @@ def run_simulation(
         (-6.0, -6.0, 420.0, 27600.0, "daylight"),
         (-3.0, -3.0, 420.5, 27590.0, "daylight"),
         (-1.0, -1.0, 421.0, 27580.0, "daylight"),  # enters range!
-        (0.0, 0.0, 421.5, 27580.0, "daylight"),    # direct zenith!
-        (1.5, 1.5, 421.0, 27580.0, "daylight"),    # exiting
+        (0.0, 0.0, 421.5, 27580.0, "daylight"),  # direct zenith!
+        (1.5, 1.5, 421.0, 27580.0, "daylight"),  # exiting
         (4.0, 4.0, 420.5, 27590.0, "daylight"),
         (8.0, 8.0, 420.0, 27600.0, "daylight"),
     ]
@@ -122,7 +122,9 @@ def run_simulation(
                 footprint_km=4500.0,
                 timestamp=time.time(),
             )
-            rel = compute_relative_position(observer, telemetry, threshold_km=threshold_km)
+            rel = compute_relative_position(
+                observer, telemetry, threshold_km=threshold_km
+            )
             dashboard.record_history(telemetry, rel)
             notifier.evaluate_and_notify(rel, telemetry, observer)
 
@@ -166,7 +168,9 @@ def main(argv: list[str] | None = None) -> int:
             return 1
         success = notifier.send_test()
         if success:
-            console.print("[bold green]✓ Notification sent! Check your Ubuntu desktop banner.[/]")
+            console.print(
+                "[bold green]✓ Notification sent! Check your Ubuntu desktop banner.[/]"
+            )
             return 0
         console.print("[bold red]Failed to dispatch notification via notify-send.[/]")
         return 1
@@ -190,7 +194,9 @@ def main(argv: list[str] | None = None) -> int:
 
     dashboard = ISSDashboard(observer=observer, threshold_km=args.threshold)
 
-    console.print("[bold cyan]Connecting to ISS telemetry stream... Press Ctrl+C to exit.[/]")
+    console.print(
+        "[bold cyan]Connecting to ISS telemetry stream... Press Ctrl+C to exit.[/]"
+    )
 
     error_msg: str | None = None
     last_iss: ISSTelemetry | None = None
@@ -204,7 +210,9 @@ def main(argv: list[str] | None = None) -> int:
             while True:
                 try:
                     iss = client.fetch_telemetry()
-                    rel = compute_relative_position(observer, iss, threshold_km=args.threshold)
+                    rel = compute_relative_position(
+                        observer, iss, threshold_km=args.threshold
+                    )
                     dashboard.record_history(iss, rel)
                     notifier.evaluate_and_notify(rel, iss, observer)
                     error_msg = None
@@ -224,7 +232,9 @@ def main(argv: list[str] | None = None) -> int:
                 time.sleep(args.interval)
 
     except KeyboardInterrupt:
-        console.print("\n[bold yellow]ISS tracking session terminated by operator. Standby.[/]")
+        console.print(
+            "\n[bold yellow]ISS tracking session terminated by operator. Standby.[/]"
+        )
         return 0
     except (OSError, RuntimeError) as err:
         console.print(f"\n[bold red]Fatal error in tracking loop:[/] {err}")

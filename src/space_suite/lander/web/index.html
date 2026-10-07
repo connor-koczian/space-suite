@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SpaceSuite — Starship & Lander Suicide Burn Simulator</title>
+  <style>
+    :root {
+      --bg: #07090e;
+      --panel: rgba(14, 20, 32, 0.85);
+      --border: rgba(0, 210, 255, 0.22);
+      --cyan: #00d2ff;
+      --green: #00ff9d;
+      --yellow: #ffb800;
+      --red: #ff334b;
+      --text: #e2e8f0;
+      --text-dim: #718096;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace; }
+    body { background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+
+    /* Header */
+    header {
+      background: var(--panel);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 10;
+    }
+
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand h1 { font-size: 1.15rem; font-weight: 700; letter-spacing: 1px; color: var(--cyan); }
+    .badge {
+      font-size: 0.72rem;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      border: 1px solid var(--cyan);
+      color: var(--cyan);
+      background: rgba(0, 210, 255, 0.1);
+    }
+
+    /* Main Grid */
+    main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      height: calc(100vh - 60px);
+      position: relative;
+    }
+
+    /* Canvas Viewport */
+    .viewport {
+      position: relative;
+      background: radial-gradient(circle at 50% 30%, #0d1526 0%, #060910 100%);
+      overflow: hidden;
+    }
+
+    canvas { width: 100%; height: 100%; display: block; }
+
+    /* Telemetry Sidebar */
+    .sidebar {
+      background: var(--panel);
+      backdrop-filter: blur(12px);
+      border-left: 1px solid var(--border);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      overflow-y: auto;
+      z-index: 10;
+    }
+
+    .card {
+      background: rgba(10, 15, 26, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 14px;
+    }
+
+    .card-title {
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+
+    .status-banner {
+      font-size: 1.05rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      text-align: center;
+      margin-bottom: 4px;
+    }
+    .status-DESCENT { background: rgba(0, 210, 255, 0.15); color: var(--cyan); border: 1px solid var(--cyan); }
+    .status-BURNING { background: rgba(255, 184, 0, 0.15); color: var(--yellow); border: 1px solid var(--yellow); }
+    .status-LANDED { background: rgba(0, 255, 157, 0.2); color: var(--green); border: 1px solid var(--green); }
+    .status-CRASHED { background: rgba(255, 51, 75, 0.2); color: var(--red); border: 1px solid var(--red); }
+
+    .telemetry-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      font-size: 0.86rem;
+    }
+    .telemetry-val { font-family: monospace; font-weight: 700; font-size: 0.95rem; }
+
+    /* Interactive Controls */
+    .controls-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .btn {
+      background: rgba(0, 210, 255, 0.12);
+      border: 1px solid var(--cyan);
+      color: var(--cyan);
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      letter-spacing: 0.5px;
+    }
+    .btn:hover { background: rgba(0, 210, 255, 0.25); }
+    .btn-green { border-color: var(--green); color: var(--green); background: rgba(0, 255, 157, 0.12); }
+    .btn-green:hover { background: rgba(0, 255, 157, 0.25); }
+    .btn-yellow { border-color: var(--yellow); color: var(--yellow); background: rgba(255, 184, 0, 0.12); }
+    .btn-yellow:hover { background: rgba(255, 184, 0, 0.25); }
+
+    .slider-container { display: flex; flex-direction: column; gap: 6px; margin: 4px 0; }
+    .slider-label { font-size: 0.78rem; display: flex; justify-content: space-between; color: var(--text-dim); }
+    input[type=range] { width: 100%; accent-color: var(--cyan); }
+
+    /* Overlay HUD Crosshairs */
+    .hud-overlay {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .hud-badge {
+      background: rgba(14, 20, 32, 0.8);
+      border: 1px solid rgba(0, 210, 255, 0.3);
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 0.82rem;
+      color: var(--cyan);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <span style="font-size: 1.4rem;">🚀</span>
+      <h1>SPACESUITE :: STARSHIP & LANDER SUICIDE BURN GNC</h1>
+      <span id="vehicleBadge" class="badge">STARSHIP SUPER HEAVY</span>
+    </div>
+    <div style="display: flex; gap: 10px; align-items: center;">
+      <button id="soundBtn" class="btn" style="padding: 6px 12px; font-size: 0.75rem;">🔊 SOUND: OFF</button>
+      <button id="resetBtn" class="btn btn-yellow" style="padding: 6px 12px; font-size: 0.75rem;">🔄 RESET</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="viewport">
+      <canvas id="simCanvas"></canvas>
+      <div class="hud-overlay">
+        <div id="hudTime" class="hud-badge">MISSION T+ 00.0s</div>
+        <div id="hudBurnAlt" class="hud-badge" style="color: var(--yellow);">IGNITION TARGET: -- m</div>
+      </div>
+    </div>
+
+    <aside class="sidebar">
+      <div class="card">
+        <div class="card-title">FLIGHT STATUS</div>
+        <div id="statusBanner" class="status-banner status-DESCENT">DESCENT</div>
+        <div id="statusDetail" style="font-size: 0.78rem; color: var(--text-dim); margin-top: 6px; text-align: center;">
+          Free fall descent towards landing zone
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">REAL-TIME TELEMETRY</div>
+        <div class="telemetry-row">
+          <span>Altitude (AGL):</span>
+          <span id="valAlt" class="telemetry-val" style="color: var(--cyan);">0.0 m</span>
+        </div>
+        <div class="telemetry-row">
+          <span>Vertical Velocity:</span>
+          <span id="valVy" class="telemetry-val">-0.0 m/s</span>
+        </div>
+        <div class="telemetry-row">
+          <span>Horizontal Velocity:</span>
+          <span id="valVx" class="telemetry-val">0.0 m/s</span>
+        </div>
+        <div class="telemetry-row">
+          <span>Pad Offset X:</span>
+          <span id="valX" class="telemetry-val">0.0 m</span>
+        </div>
+        <div class="telemetry-row">
+          <span>Pitch Tilt:</span>
+          <span id="valTheta" class="telemetry-val">0.0°</span>
+        </div>
+        <div class="telemetry-row">
+          <span>Engine Throttle:</span>
+          <span id="valThrottle" class="telemetry-val" style="color: var(--yellow);">0 %</span>
+        </div>
+        <div class="telemetry-row">
+          <span>Propellant Remaining:</span>
+          <span id="valFuel" class="telemetry-val">0 kg</span>
+        </div>
+      </div>
+
+      <div class="card controls-grid">
+        <div class="card-title">GNC & AUTOPILOT</div>
+        <button id="apToggleBtn" class="btn btn-green">🤖 AUTOPILOT ENGAGED</button>
+
+        <div class="slider-container" id="manualControls" style="display: none; margin-top: 8px;">
+          <div class="slider-label">
+            <span>MANUAL THROTTLE</span>
+            <span id="throttleLabel">0%</span>
+          </div>
+          <input type="range" id="throttleSlider" min="0" max="100" value="0">
+
+          <div style="display: flex; gap: 8px; margin-top: 8px;">
+            <button id="tiltLeftBtn" class="btn" style="flex: 1; padding: 6px;">↶ TILT L</button>
+            <button id="tiltCenterBtn" class="btn" style="flex: 1; padding: 6px;">| 0° |</button>
+            <button id="tiltRightBtn" class="btn" style="flex: 1; padding: 6px;">↷ TILT R</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card controls-grid">
+        <div class="card-title">VEHICLE & ENVIRONMENT</div>
+        <button id="btnStarship" class="btn">🚀 Starship Super Heavy (Earth)</button>
+        <button id="btnFalcon9" class="btn">🚀 Falcon 9 First Stage (Earth)</button>
+        <button id="btnLunar" class="btn">🌕 Apollo Lunar Module (Moon)</button>
+      </div>
+    </aside>
+  </main>
+
+  <script>
+    const canvas = document.getElementById('simCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let telem = {
+      time: 0, vehicle: 'Starship', x: 0, y: 800, vx: 0, vy: -70,
+      theta_deg: 0, throttle: 0, gimbal_deg: 0, fuel: 30000, fuel_capacity: 80000,
+      legs_deployed: false, autopilot: true, status: 'DESCENT', status_detail: '',
+      suicide_burn_alt: 250, pad_width: 40, history: []
+    };
+
+    // Resize canvas
+    function resizeCanvas() {
+      canvas.width = canvas.parentElement.clientWidth;
+      canvas.height = canvas.parentElement.clientHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // Web Audio Synthesizer
+    let audioCtx = null;
+    let engineOsc = null;
+    let engineGain = null;
+    let soundEnabled = false;
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        engineOsc = audioCtx.createOscillator();
+        engineGain = audioCtx.createGain();
+
+        // Brown noise / deep rumble simulation
+        engineOsc.type = 'sawtooth';
+        engineOsc.frequency.setValueAtTime(45, audioCtx.currentTime);
+
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(140, audioCtx.currentTime);
+
+        engineOsc.connect(filter);
+        filter.connect(engineGain);
+        engineGain.connect(audioCtx.destination);
+        engineGain.gain.setValueAtTime(0, audioCtx.currentTime);
+        engineOsc.start();
+      }
+    }
+
+    document.getElementById('soundBtn').addEventListener('click', () => {
+      soundEnabled = !soundEnabled;
+      document.getElementById('soundBtn').textContent = soundEnabled ? '🔊 SOUND: ON' : '🔈 SOUND: OFF';
+      if (soundEnabled) {
+        initAudio();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+      } else if (engineGain) {
+        engineGain.gain.setValueAtTime(0, audioCtx.currentTime);
+      }
+    });
+
+    // Send control actions
+    async function sendAction(action, data = {}) {
+      try {
+        await fetch('/api/action', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action, ...data })
+        });
+      } catch (err) {
+        console.error('Action error:', err);
+      }
+    }
+
+    // Buttons wiring
+    document.getElementById('resetBtn').addEventListener('click', () => sendAction('reset'));
+    document.getElementById('btnStarship').addEventListener('click', () => sendAction('preset', { preset: 'starship' }));
+    document.getElementById('btnFalcon9').addEventListener('click', () => sendAction('preset', { preset: 'falcon9' }));
+    document.getElementById('btnLunar').addEventListener('click', () => sendAction('preset', { preset: 'lunar' }));
+
+    const apBtn = document.getElementById('apToggleBtn');
+    const manualDiv = document.getElementById('manualControls');
+
+    apBtn.addEventListener('click', () => {
+      const newAp = !telem.autopilot;
+      sendAction('toggle_autopilot', { enabled: newAp });
+    });
+
+    // Manual slider
+    let manualThrottle = 0;
+    let manualGimbal = 0;
+    const throttleSlider = document.getElementById('throttleSlider');
+    throttleSlider.addEventListener('input', (e) => {
+      manualThrottle = parseFloat(e.target.value) / 100.0;
+      document.getElementById('throttleLabel').textContent = Math.round(manualThrottle * 100) + '%';
+      sendAction('controls', { throttle: manualThrottle, gimbal: manualGimbal });
+    });
+
+    document.getElementById('tiltLeftBtn').addEventListener('click', () => {
+      manualGimbal = Math.min(12, manualGimbal + 3.0);
+      sendAction('controls', { throttle: manualThrottle, gimbal: manualGimbal });
+    });
+    document.getElementById('tiltCenterBtn').addEventListener('click', () => {
+      manualGimbal = 0.0;
+      sendAction('controls', { throttle: manualThrottle, gimbal: manualGimbal });
+    });
+    document.getElementById('tiltRightBtn').addEventListener('click', () => {
+      manualGimbal = Math.max(-12, manualGimbal - 3.0);
+      sendAction('controls', { throttle: manualThrottle, gimbal: manualGimbal });
+    });
+
+    // Polling Telemetry from server at 30 Hz
+    async function pollTelemetry() {
+      try {
+        const res = await fetch('/api/telemetry');
+        if (res.ok) {
+          telem = await res.json();
+          updateUI();
+          updateSound();
+        }
+      } catch (e) {}
+      setTimeout(pollTelemetry, 33);
+    }
+    pollTelemetry();
+
+    function updateSound() {
+      if (!soundEnabled || !engineGain || !audioCtx) return;
+      if (telem.throttle > 0.01 && telem.status !== 'LANDED' && telem.status !== 'CRASHED') {
+        const targetGain = Math.min(0.35, telem.throttle * 0.35);
+        engineGain.gain.setTargetAtTime(targetGain, audioCtx.currentTime, 0.05);
+      } else {
+        engineGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.05);
+      }
+    }
+
+    function updateUI() {
+      document.getElementById('vehicleBadge').textContent = telem.vehicle.toUpperCase();
+      document.getElementById('hudTime').textContent = `MISSION T+ ${telem.time.toFixed(1)}s`;
+      document.getElementById('hudBurnAlt').textContent = `IGNITION TARGET: ${telem.suicide_burn_alt.toFixed(0)} m`;
+
+      const banner = document.getElementById('statusBanner');
+      banner.textContent = telem.status;
+      banner.className = `status-banner status-${telem.status}`;
+      document.getElementById('statusDetail').textContent = telem.status_detail;
+
+      document.getElementById('valAlt').textContent = `${telem.y.toFixed(1)} m`;
+      const vyEl = document.getElementById('valVy');
+      vyEl.textContent = `${telem.vy >= 0 ? '+' : ''}${telem.vy.toFixed(1)} m/s`;
+      vyEl.style.color = Math.abs(telem.vy) <= 4.0 ? 'var(--green)' : 'var(--red)';
+
+      document.getElementById('valVx').textContent = `${telem.vx >= 0 ? '+' : ''}${telem.vx.toFixed(1)} m/s`;
+      document.getElementById('valX').textContent = `${telem.x >= 0 ? '+' : ''}${telem.x.toFixed(1)} m`;
+      document.getElementById('valTheta').textContent = `${telem.theta_deg >= 0 ? '+' : ''}${telem.theta_deg.toFixed(1)}°`;
+      document.getElementById('valThrottle').textContent = `${Math.round(telem.throttle * 100)} %`;
+      document.getElementById('valFuel').textContent = `${Math.round(telem.fuel)} kg (${Math.round((telem.fuel / telem.fuel_capacity) * 100)}%)`;
+
+      if (telem.autopilot) {
+        apBtn.className = 'btn btn-green';
+        apBtn.textContent = '🤖 AUTOPILOT ENGAGED';
+        manualDiv.style.display = 'none';
+      } else {
+        apBtn.className = 'btn btn-yellow';
+        apBtn.textContent = '🕹️ MANUAL PILOT CONTROL';
+        manualDiv.style.display = 'block';
+      }
+    }
+
+    // 60 FPS Render Loop
+    function render() {
+      const W = canvas.width;
+      const H = canvas.height;
+      ctx.clearRect(0, 0, W, H);
+
+      // Camera coordinates
+      const groundY = H - 80;
+      const scale = telem.y < 120 ? 1.5 : (telem.y < 400 ? 0.9 : 0.65);
+      const cx = W / 2 + (telem.x * scale);
+      const cy = groundY - (telem.y * scale);
+
+      // Stars
+      ctx.fillStyle = '#ffffff';
+      for (let i = 0; i < 40; i++) {
+        const sx = (i * 123 + 45) % W;
+        const sy = (i * 321 + 78) % (groundY - 100);
+        ctx.fillRect(sx, sy, 1.5, 1.5);
+      }
+
+      // Ground Terrain
+      ctx.fillStyle = '#222733';
+      ctx.fillRect(0, groundY, W, H - groundY);
+
+      // Landing Pad
+      const padWidthPx = telem.pad_width * scale;
+      const padX = W / 2 - padWidthPx / 2;
+      ctx.fillStyle = '#8a99ad';
+      ctx.fillRect(padX, groundY - 6, padWidthPx, 10);
+      ctx.strokeStyle = '#f59e0b';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(padX, groundY - 6, padWidthPx, 10);
+
+      // Lights
+      ctx.fillStyle = telem.autopilot ? '#00ff9d' : '#00d2ff';
+      ctx.beginPath();
+      ctx.arc(padX + 4, groundY - 1, 3, 0, Math.PI * 2);
+      ctx.arc(padX + padWidthPx - 4, groundY - 1, 3, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Trajectory Path
+      if (telem.history && telem.history.length > 1) {
+        ctx.strokeStyle = 'rgba(0, 210, 255, 0.4)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (let i = 0; i < telem.history.length; i++) {
+          const hx = W / 2 + (telem.history[i][0] * scale);
+          const hy = groundY - (telem.history[i][1] * scale);
+          if (i === 0) ctx.moveTo(hx, hy);
+          else ctx.lineTo(hx, hy);
+        }
+        ctx.stroke();
+      }
+
+      // Render Rocket Body
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate((telem.theta_deg * Math.PI) / 180.0);
+
+      const rw = 16;
+      const rh = 65;
+
+      // Engine Plume
+      if (telem.throttle > 0.01 && telem.fuel > 0 && telem.status !== 'LANDED' && telem.status !== 'CRASHED') {
+        const flameLen = 40 * telem.throttle + Math.random() * 15;
+        ctx.save();
+        ctx.translate(0, rh / 2);
+        ctx.rotate((telem.gimbal_deg * Math.PI) / 180.0);
+
+        // Orange flame
+        const grad = ctx.createLinearGradient(0, 0, 0, flameLen);
+        grad.addColorStop(0, '#ffffff');
+        grad.addColorStop(0.2, '#00d2ff');
+        grad.addColorStop(0.5, '#f59e0b');
+        grad.addColorStop(1, 'rgba(239, 68, 68, 0)');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.moveTo(-rw * 0.35, 0);
+        ctx.lineTo(0, flameLen);
+        ctx.lineTo(rw * 0.35, 0);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // Body Polygon
+      ctx.fillStyle = telem.vehicle.includes('Lunar') ? '#d4af37' : '#cbd5e1';
+      ctx.strokeStyle = '#475569';
+      ctx.lineWidth = 2;
+
+      ctx.beginPath();
+      ctx.moveTo(0, -rh / 2 - 12); // Nose cone
+      ctx.lineTo(rw / 2, -rh / 2);
+      ctx.lineTo(rw / 2, rh / 2);
+      ctx.lineTo(-rw / 2, rh / 2);
+      ctx.lineTo(-rw / 2, -rh / 2);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Flaps / Legs
+      if (telem.legs_deployed) {
+        ctx.strokeStyle = '#e2e8f0';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(-rw / 2, rh / 2 - 4);
+        ctx.lineTo(-rw / 2 - 10, rh / 2 + 14);
+        ctx.moveTo(rw / 2, rh / 2 - 4);
+        ctx.lineTo(rw / 2 + 10, rh / 2 + 14);
+        ctx.stroke();
+      }
+
+      ctx.restore();
+
+      requestAnimationFrame(render);
+    }
+    requestAnimationFrame(render);
+  </script>
+</body>
+</html>

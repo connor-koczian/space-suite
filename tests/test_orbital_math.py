@@ -97,7 +97,9 @@ def test_degrees_to_cardinal():
 
 
 def test_compute_relative_position():
-    obs = ObserverCoords(latitude=51.5074, longitude=-0.1278, altitude_km=0.0, name="London")
+    obs = ObserverCoords(
+        latitude=51.5074, longitude=-0.1278, altitude_km=0.0, name="London"
+    )
     iss = ISSTelemetry(
         name="iss",
         id=25544,
