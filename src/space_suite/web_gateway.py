@@ -48,13 +48,19 @@ class UnifiedGatewayHandler(SimpleHTTPRequestHandler):
 
     def log_message(self, format: str, *args: Any) -> None:
         # Suppress logging for high-frequency polling
-        path = args[0] if args else ""
-        if "/api/" not in path:
-            super().log_message(format, *args)
+        if args and isinstance(args[0], str) and "/api/" in args[0]:
+            return
+        super().log_message(format, *args)
 
     def do_GET(self) -> None:
         parsed_url = urllib.parse.urlparse(self.path)
         path = parsed_url.path
+
+        # Favicon and decorative browser requests
+        if path in ("/favicon.ico", "/favicon.png") or path.startswith("/images/"):
+            self.send_response(HTTPStatus.NO_CONTENT)
+            self.end_headers()
+            return
 
         # 1. Unified Hub
         if path in ("/", "/index.html", "/hub"):
@@ -134,7 +140,7 @@ class UnifiedGatewayHandler(SimpleHTTPRequestHandler):
             return
 
         # Lander action commands
-        if path in ("/api/action", "/lander/api/action"):
+        if path in ("/api/action", "/lander/api/action", "/api/lander/action"):
             payload = json.loads(post_body.decode("utf-8")) if post_body else {}
             action = payload.get("action")
             if action == "reset":
@@ -203,10 +209,14 @@ def launch_unified_gateway(
         with ISSClient() as client:
             while iss_running:
                 try:
-                    telemetry = client.get_current_telemetry()
+                    telemetry = client.fetch_telemetry()
                     iss_state.update(telemetry)
                 except TelemetryError as err:
+                    iss_state.set_error(str(err))
                     logger.debug("ISS telemetry error: %s", err)
+                except (OSError, RuntimeError) as err:
+                    iss_state.set_error(str(err))
+                    logger.warning("ISS worker error: %s", err)
                 time.sleep(2.0)
 
     iss_thread = threading.Thread(target=iss_worker, daemon=True)

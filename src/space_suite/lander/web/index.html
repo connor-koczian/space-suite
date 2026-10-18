@@ -377,7 +377,10 @@
     // Polling Telemetry from server at 30 Hz
     async function pollTelemetry() {
       try {
-        const res = await fetch('/api/telemetry');
+        let res = await fetch('/api/lander/telemetry');
+        if (!res.ok) {
+          res = await fetch('/api/telemetry');
+        }
         if (res.ok) {
           telem = await res.json();
           updateUI();

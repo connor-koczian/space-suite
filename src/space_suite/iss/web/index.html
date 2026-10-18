@@ -548,7 +548,10 @@
     // Fetch Telemetry from local SpaceSuite Server
     async function pollTelemetry() {
       try {
-        const res = await fetch('/api/telemetry');
+        let res = await fetch('/api/iss/telemetry');
+        if (!res.ok) {
+          res = await fetch('/api/telemetry');
+        }
         if (!res.ok) throw new Error('Downlink offline');
         const data = await res.json();
         updateUI(data);

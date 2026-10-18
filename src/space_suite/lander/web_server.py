@@ -8,6 +8,7 @@ import math
 import threading
 import time
 from pathlib import Path
+from typing import Any
 from urllib.parse import urlparse
 
 from space_suite.lander.autopilot import SuicideBurnAutopilot
@@ -205,10 +206,11 @@ class LanderWebHandler(http.server.SimpleHTTPRequestHandler):
 
         self.send_error(404, "Not Found")
 
-    def log_message(self, format: str, *args) -> None:
+    def log_message(self, format: str, *args: Any) -> None:
         # Suppress routine GET logging for sub-second telemetry polls
-        if "/api/telemetry" not in (args[0] if args else ""):
-            super().log_message(format, *args)
+        if args and isinstance(args[0], str) and "/api/" in args[0]:
+            return
+        super().log_message(format, *args)
 
 
 def start_lander_web_server(port: int = 8057) -> None:
